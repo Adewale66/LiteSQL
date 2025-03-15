@@ -248,7 +248,7 @@ TokenList scanTokens()
 	return scanner.tokenList;
 }
 
-static void printToken(Token token)
+void printToken(Token token)
 {
 
 	switch (token.type)

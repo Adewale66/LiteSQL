@@ -25,10 +25,6 @@ static Token advance()
 	return previous();
 }
 
-static char *table()
-{
-}
-
 static bool check(TokenType type)
 {
 	if (isAtEnd())
@@ -61,8 +57,67 @@ static bool match(int n, ...)
 	va_end(args);
 	return checked;
 }
-static char *addColumn(SelectStmt *stmt)
+static void addColumn(SelectStmt *stmt)
 {
+	if (previous().type == TOKEN_IDENTIFIER)
+	{
+		if (stmt->all_tables)
+		{
+			fprintf(stderr, "Invalid select\n"); // Come up with something better
+			freeTokens();
+			exit(4);
+		}
+		if (stmt->no_of_columns < stmt->capacity + 1)
+		{
+			int oldCapacity = stmt->capacity;
+			stmt->capacity = GROW_CAPACITY(oldCapacity);
+			stmt->column_names = realloc(stmt->column_names, stmt->capacity * sizeof(char *));
+			if (stmt->column_names == NULL)
+			{
+				fprintf(stderr, "Could not malloc\n");
+				freeTokens();
+				exit(9);
+			}
+		}
+		char *name = (char *)previous().literal;
+		stmt->column_names[stmt->no_of_columns] = malloc(strlen(name) + 1);
+		if (stmt->column_names[stmt->no_of_columns] == NULL)
+		{
+			fprintf(stderr, "Could not malloc\n");
+			freeTokens();
+			exit(10);
+		}
+		strcpy(stmt->column_names[stmt->no_of_columns], name);
+		stmt->no_of_columns++;
+	}
+	else
+	{
+		if (stmt->no_of_columns != 0)
+		{
+			fprintf(stderr, "Invalid statement\n"); // Something better
+			freeTokens();
+			exit(4);
+		}
+		stmt->all_tables = true;
+	}
+}
+
+static char *table()
+{
+	if (peek().type != TOKEN_IDENTIFIER)
+	{
+		exit(69); // HANDLE THIS
+	}
+
+	char *identifier_name = (char *)peek().literal;
+	char *table_name = malloc(strlen(identifier_name) + 1);
+	if (table_name == NULL)
+	{
+		exit(69); // HANDLE THIS
+	}
+	strcpy(table_name, identifier_name);
+	advance();
+	return table_name;
 }
 
 static Statement parse()
@@ -80,8 +135,16 @@ static Statement parse()
 			exit(4);
 		}
 		select->capacity = 0;
-		select->column_names = 0;
-		while (match(1, TOKEN_IDENTIFIER))
+		select->no_of_columns = 0;
+		select->all_tables = false;
+		select->column_names = malloc(select->capacity * sizeof(char *));
+		if (select->column_names == NULL)
+		{
+			fprintf(stderr, "Could not malloc\n");
+			freeTokens();
+			exit(7);
+		}
+		while (match(2, TOKEN_STAR, TOKEN_IDENTIFIER))
 		{
 			addColumn(select);
 			if (!match(1, TOKEN_COMMA))
@@ -109,12 +172,13 @@ static Statement parse()
 		printf("unknown staement type\n");
 		break;
 	}
+	// freeTokens();
 	return statement;
 }
 
-void intiParser(TokenList tokens)
+Statement intiParser(TokenList tokens)
 {
 	parser.tokenlist = tokens;
 	parser.current = 0;
-	parse();
+	return parse();
 }

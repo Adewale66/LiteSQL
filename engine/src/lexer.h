@@ -54,5 +54,6 @@ typedef struct
 void initScanner(char *source);
 TokenList scanTokens();
 void freeTokens();
+void printToken(Token token);
 void printTokens();
 #endif

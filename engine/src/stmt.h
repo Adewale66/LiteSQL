@@ -9,6 +9,7 @@ typedef struct
 	int no_of_columns;
 	int capacity;
 	char *table_name;
+	bool all_tables;
 } SelectStmt;
 
 typedef struct

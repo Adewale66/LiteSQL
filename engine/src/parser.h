@@ -12,6 +12,6 @@ typedef struct
 
 } Parser;
 
-void intiParser(TokenList tokens);
+Statement intiParser(TokenList tokens);
 
 #endif
