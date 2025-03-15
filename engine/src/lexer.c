@@ -17,6 +17,11 @@ void freeTokens()
 static char *substring(char *source, int start, int length)
 {
 	char *sub = ALLOCATE_MEMORY(char, length + 1);
+	if (sub == NULL)
+	{
+		freeTokens();
+		exit(EXIT_FAILURE);
+	}
 	memcpy(sub, source + start, length);
 	sub[length] = '\0';
 	return sub;
@@ -47,7 +52,7 @@ static TokenType findType(char *text)
 	return TOKEN_NULL;
 }
 
-void initScanner(char *source)
+bool initScanner(char *source)
 {
 
 	if (source == NULL)

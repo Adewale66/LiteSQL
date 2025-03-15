@@ -8,6 +8,7 @@
 #include <strings.h>
 #include <stdlib.h>
 #include "error.h"
+#include "memory.h"
 
 typedef enum
 {
@@ -51,7 +52,7 @@ typedef struct
 
 } Scanner;
 
-void initScanner(char *source);
+bool initScanner(char *source);
 TokenList scanTokens();
 void freeTokens();
 void printToken(Token token);
