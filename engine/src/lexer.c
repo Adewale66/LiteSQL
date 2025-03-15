@@ -58,7 +58,7 @@ bool initScanner(char *source)
 	if (source == NULL)
 	{
 		error("Source can not be null");
-		return;
+		return false;
 	}
 	hadError = false;
 
@@ -73,6 +73,7 @@ bool initScanner(char *source)
 	tokens.tokens = NULL;
 
 	scanner.tokenList = tokens;
+	return true;
 }
 
 static void addToArray(TokenList *list, Token token)
