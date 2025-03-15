@@ -4,7 +4,7 @@ OBJDIR  := build
 SRCDIR  := src
 BINDIR  := bin
 TARGET  := $(BINDIR)/db
-VFlags  := --leak-check=full
+VFlags  := --leak-check=full --show-leak-kinds=all
 
 SOURCES := $(wildcard $(SRCDIR)/*.c)
 OBJECTS := $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SOURCES))
@@ -22,7 +22,7 @@ $(OBJDIR) $(BINDIR):
 	mkdir -p $@
 
 memory:
-	valgrind ${TARGET} ${VFlags}
+	valgrind ${VFlags} ${TARGET}
 
 run:
 	./${TARGET}

@@ -3,6 +3,26 @@
 Parser parser;
 Statement statement;
 
+void freeStatment()
+{
+	freeTokens();
+	if (statement.statemntType == TOKEN_SELECT)
+	{
+		if (statement.stmt.select->table_name != NULL)
+			free(statement.stmt.select->table_name);
+		if (statement.stmt.select->no_of_columns != 0)
+		{
+			for (int i = 0; i < statement.stmt.select->no_of_columns; i++)
+			{
+				free(statement.stmt.select->column_names[i]);
+			}
+			free(statement.stmt.select->column_names);
+			free(statement.stmt.select);
+		}
+		statement.stmt.select->no_of_columns = 0;
+	}
+}
+
 static Token previous()
 {
 	return parser.tokenlist.tokens[parser.current - 1];
@@ -71,22 +91,10 @@ static void addColumn(SelectStmt *stmt)
 		{
 			int oldCapacity = stmt->capacity;
 			stmt->capacity = GROW_CAPACITY(oldCapacity);
-			stmt->column_names = realloc(stmt->column_names, stmt->capacity * sizeof(char *));
-			if (stmt->column_names == NULL)
-			{
-				fprintf(stderr, "Could not malloc\n");
-				freeTokens();
-				exit(9);
-			}
+			stmt->column_names = GROW_ARRAY(char *, stmt->column_names, oldCapacity, stmt->capacity);
 		}
 		char *name = (char *)previous().literal;
-		stmt->column_names[stmt->no_of_columns] = malloc(strlen(name) + 1);
-		if (stmt->column_names[stmt->no_of_columns] == NULL)
-		{
-			fprintf(stderr, "Could not malloc\n");
-			freeTokens();
-			exit(10);
-		}
+		stmt->column_names[stmt->no_of_columns] = ALLOCATE_MEMORY(char, strlen(name) + 1);
 		strcpy(stmt->column_names[stmt->no_of_columns], name);
 		stmt->no_of_columns++;
 	}
@@ -110,11 +118,7 @@ static char *table()
 	}
 
 	char *identifier_name = (char *)peek().literal;
-	char *table_name = malloc(strlen(identifier_name) + 1);
-	if (table_name == NULL)
-	{
-		exit(69); // HANDLE THIS
-	}
+	char *table_name = ALLOCATE_MEMORY(char, strlen(identifier_name) + 1);
 	strcpy(table_name, identifier_name);
 	advance();
 	return table_name;
@@ -127,28 +131,20 @@ static Statement parse()
 	switch (statementType.type)
 	{
 	case TOKEN_SELECT:
-		SelectStmt *select = (SelectStmt *)malloc(sizeof(SelectStmt));
-		if (select == NULL)
-		{
-			fprintf(stderr, "Could not malloc\n");
-			freeTokens();
-			exit(4);
-		}
+		SelectStmt *select = ALLOCATE_MEMORY(SelectStmt, sizeof(SelectStmt));
 		select->capacity = 0;
 		select->no_of_columns = 0;
 		select->all_tables = false;
-		select->column_names = malloc(select->capacity * sizeof(char *));
-		if (select->column_names == NULL)
-		{
-			fprintf(stderr, "Could not malloc\n");
-			freeTokens();
-			exit(7);
-		}
+		select->column_names = ALLOCATE_MEMORY(char *, select->capacity * sizeof(char *));
 		while (match(2, TOKEN_STAR, TOKEN_IDENTIFIER))
 		{
 			addColumn(select);
-			if (!match(1, TOKEN_COMMA))
-				break;
+			if (match(1, TOKEN_COMMA) && peek().type != TOKEN_IDENTIFIER)
+			{
+				fprintf(stderr, "Invalid statement\n"); // Something better
+				freeTokens();
+				exit(4);
+			}
 		}
 		consume(TOKEN_FROM, "Expected FROM after statement\n");
 		select->table_name = table();
@@ -158,13 +154,7 @@ static Statement parse()
 		statement.stmt.select = select;
 		break;
 	case TOKEN_INSERT:
-		InsertStmt *insert = (InsertStmt *)malloc(sizeof(InsertStmt));
-		if (insert == NULL)
-		{
-			fprintf(stderr, "Could not malloc\n");
-			freeTokens();
-			exit(4);
-		}
+		InsertStmt *insert = ALLOCATE_MEMORY(InsertStmt, sizeof(InsertStmt));
 		statement.statemntType = TOKEN_INSERT;
 		statement.stmt.insert = insert;
 		break;
@@ -172,7 +162,7 @@ static Statement parse()
 		printf("unknown staement type\n");
 		break;
 	}
-	// freeTokens();
+	freeTokens();
 	return statement;
 }
 

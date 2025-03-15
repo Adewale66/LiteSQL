@@ -1,6 +1,7 @@
 #include "lexer.h"
 
 static Scanner scanner;
+static bool hadError;
 
 void freeTokens()
 {
@@ -9,19 +10,13 @@ void freeTokens()
 		if (scanner.tokenList.tokens[i].literal != NULL)
 			free(scanner.tokenList.tokens[i].literal);
 	}
-	free(scanner.tokenList.tokens);
+	if (scanner.tokenList.tokens != NULL)
+		free(scanner.tokenList.tokens);
+	scanner.tokenList.size = 0;
 }
 static char *substring(char *source, int start, int length)
 {
-	char *sub = (char *)malloc(length + 1);
-	if (!sub)
-	{
-
-		fprintf(stderr, "Could not malloc\n");
-		freeTokens();
-		exit(2);
-	}
-
+	char *sub = ALLOCATE_MEMORY(char, length + 1);
 	memcpy(sub, source + start, length);
 	sub[length] = '\0';
 	return sub;
@@ -57,9 +52,10 @@ void initScanner(char *source)
 
 	if (source == NULL)
 	{
-		fprintf(stderr, "Source can not be null\n");
+		error("Source can not be null");
 		return;
 	}
+	hadError = false;
 
 	scanner.source = source;
 	scanner.start = 0;
@@ -90,12 +86,6 @@ static void addToArray(TokenList *list, Token token)
 static void addToken(TokenType type)
 {
 	char *text = substring(scanner.source, scanner.start, scanner.current - scanner.start);
-	if (text == NULL)
-	{
-		fprintf(stderr, "Could not create substring\n");
-		return;
-	}
-
 	Token token;
 	token.type = type;
 	token.literal = text;
@@ -119,35 +109,18 @@ static char peek()
 	return scanner.source[scanner.current];
 }
 
-static char peekNext()
-{
-	if (scanner.current + 1 >= scanner.source_length)
-		return '\0';
-	return scanner.source[scanner.current + 1];
-}
 static void number()
 {
 	while (isdigit(peek()))
 		advance();
-	if (peek() == '.' && isdigit(peekNext()))
-	{
-		advance();
-		while (isdigit(peek()))
-			advance();
-	}
 	Token token;
 	token.type = TOKEN_NUMBER;
-	char *text = substring(scanner.source, scanner.start, scanner.current - scanner.start);
-	double number = strtod(text, NULL);
+	token.literal = ALLOCATE_MEMORY(int, sizeof(int));
 
-	token.literal = malloc(sizeof(double));
-	if (token.literal == NULL)
-	{
-		fprintf(stderr, "Could not malloc\n");
-		freeTokens();
-		exit(2);
-	}
-	*(double *)token.literal = number;
+	char *text = substring(scanner.source, scanner.start, scanner.current - scanner.start);
+	int number = atoi(text);
+
+	*(int *)token.literal = number;
 	addToArray(&scanner.tokenList, token);
 	free(text);
 }
@@ -157,11 +130,6 @@ static void identifier()
 	while (isalnum(peek()))
 		advance();
 	char *text = substring(scanner.source, scanner.start, scanner.current - scanner.start);
-	if (text == NULL)
-	{
-		fprintf(stderr, "Error at identifer\n");
-		return;
-	}
 	TokenType type = findType(text);
 	if (type == TOKEN_NULL)
 		type = TOKEN_IDENTIFIER;
@@ -177,7 +145,8 @@ static void string()
 	}
 	if (isAtEnd())
 	{
-		fprintf(stderr, "Unterminated string\n");
+		error("Unterminated string");
+		hadError = true;
 		return;
 	}
 	advance();
@@ -228,7 +197,11 @@ static void scanToken()
 		}
 		else
 		{
-			fprintf(stderr, "Unexpected character %c", c);
+			char *format = "Unexpected character: %c";
+			char message[25];
+			sprintf(message, format, c);
+			error(message);
+			hadError = true;
 		}
 		break;
 	}
@@ -236,10 +209,15 @@ static void scanToken()
 
 TokenList scanTokens()
 {
-	while (!isAtEnd())
+	while (!isAtEnd() && !hadError)
 	{
 		scanner.start = scanner.current;
 		scanToken();
+	}
+	if (hadError)
+	{
+		freeTokens();
+		return scanner.tokenList;
 	}
 	Token token;
 	token.type = TOKEN_EOF;

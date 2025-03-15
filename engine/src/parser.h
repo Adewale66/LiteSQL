@@ -2,8 +2,8 @@
 #define __PARSER_H
 
 #include <stdarg.h>
-#include "lexer.h"
 #include "stmt.h"
+#include "errno.h"
 
 typedef struct
 {
@@ -13,5 +13,5 @@ typedef struct
 } Parser;
 
 Statement intiParser(TokenList tokens);
-
+void freeStatment();
 #endif
