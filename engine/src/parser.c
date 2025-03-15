@@ -83,9 +83,8 @@ static void addColumn(SelectStmt *stmt)
 	{
 		if (stmt->all_tables)
 		{
-			fprintf(stderr, "Invalid select\n"); // Come up with something better
-			freeTokens();
-			exit(4);
+			error("Invalid statement");
+			freeStatment();
 		}
 		if (stmt->no_of_columns < stmt->capacity + 1)
 		{
@@ -102,9 +101,9 @@ static void addColumn(SelectStmt *stmt)
 	{
 		if (stmt->no_of_columns != 0)
 		{
-			fprintf(stderr, "Invalid statement\n"); // Something better
-			freeTokens();
-			exit(4);
+			error("Invalid statement");
+			freeStatment();
+			return;
 		}
 		stmt->all_tables = true;
 	}
@@ -114,7 +113,8 @@ static char *table()
 {
 	if (peek().type != TOKEN_IDENTIFIER)
 	{
-		exit(69); // HANDLE THIS
+		freeStatment();
+		error("Invalid statemet");
 	}
 
 	char *identifier_name = (char *)peek().literal;
@@ -131,7 +131,7 @@ static Statement parse()
 	switch (statementType.type)
 	{
 	case TOKEN_SELECT:
-		SelectStmt *select = ALLOCATE_MEMORY(SelectStmt, sizeof(SelectStmt));
+		SelectStmt *select = ALLOCATE_MEMORY(SelectStmt, sizeof(SelectStmt)); // function pointet maybe?
 		select->capacity = 0;
 		select->no_of_columns = 0;
 		select->all_tables = false;
@@ -141,9 +141,8 @@ static Statement parse()
 			addColumn(select);
 			if (match(1, TOKEN_COMMA) && peek().type != TOKEN_IDENTIFIER)
 			{
-				fprintf(stderr, "Invalid statement\n"); // Something better
-				freeTokens();
-				exit(4);
+				error("Invalid statement");
+				freeStatment();
 			}
 		}
 		consume(TOKEN_FROM, "Expected FROM after statement\n");
