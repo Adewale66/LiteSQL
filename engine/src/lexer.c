@@ -13,6 +13,7 @@ void freeTokens()
 	if (scanner.tokenList.tokens != NULL)
 		free(scanner.tokenList.tokens);
 	scanner.tokenList.size = 0;
+	scanner.tokenList.tokens = NULL;
 }
 static char *substring(char *source, int start, int length)
 {

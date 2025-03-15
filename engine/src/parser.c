@@ -3,23 +3,33 @@
 Parser parser;
 Statement statement;
 
+static void freeSelect(SelectStmt *select)
+{
+	if (select != NULL)
+	{
+
+		if (select->table_name != NULL)
+			free(select->table_name);
+		if (select->no_of_columns != 0)
+		{
+			for (int i = 0; i < select->no_of_columns; i++)
+			{
+				free(select->column_names[i]);
+			}
+			free(select->column_names);
+			free(select);
+		}
+	}
+}
+
 void freeStatment()
 {
 	freeTokens();
 	if (statement.statemntType == TOKEN_SELECT)
 	{
-		if (statement.stmt.select->table_name != NULL)
-			free(statement.stmt.select->table_name);
-		if (statement.stmt.select->no_of_columns != 0)
-		{
-			for (int i = 0; i < statement.stmt.select->no_of_columns; i++)
-			{
-				free(statement.stmt.select->column_names[i]);
-			}
-			free(statement.stmt.select->column_names);
-			free(statement.stmt.select);
-		}
-		statement.stmt.select->no_of_columns = 0;
+		freeSelect(statement.stmt.select);
+		statement.stmt.select = NULL;
+		statement.statemntType = TOKEN_NULL;
 	}
 }
 
@@ -52,12 +62,16 @@ static bool check(TokenType type)
 	return peek().type == type;
 }
 
-static Token consume(TokenType type, char *error_message)
+static bool consume(TokenType type, char *error_message)
 {
 	if (check(type))
-		return advance();
-	fprintf(stderr, "%s\n", error_message); // TODO FREE EVERYTHING
-	exit(6);
+	{
+		advance();
+		return false;
+	}
+	fprintf(stderr, "%s\n", error_message);
+	freeStatment();
+	return true;
 }
 
 static bool match(int n, ...)
@@ -113,8 +127,9 @@ static char *table()
 {
 	if (peek().type != TOKEN_IDENTIFIER)
 	{
-		freeStatment();
-		error("Invalid statemet");
+
+		error("Invalid statement near here");
+		return NULL;
 	}
 
 	char *identifier_name = (char *)peek().literal;
@@ -131,30 +146,44 @@ static Statement parse()
 	switch (statementType.type)
 	{
 	case TOKEN_SELECT:
+		statement.statemntType = TOKEN_SELECT;
 		SelectStmt *select = ALLOCATE_MEMORY(SelectStmt, sizeof(SelectStmt), freeStatment);
+		statement.stmt.select = select;
 		select->capacity = 0;
 		select->no_of_columns = 0;
 		select->all_tables = false;
+		select->table_name = NULL;
 		select->column_names = ALLOCATE_MEMORY(char *, select->capacity * sizeof(char *), freeStatment);
+		bool hadError = false;
 		while (match(2, TOKEN_STAR, TOKEN_IDENTIFIER))
 		{
 			addColumn(select);
 			if (match(1, TOKEN_COMMA) && peek().type != TOKEN_IDENTIFIER)
 			{
 				error("Invalid statement");
-				freeStatment();
+				hadError = true;
+				break;
 			}
 		}
-		consume(TOKEN_FROM, "Expected FROM after statement\n");
+		if (hadError)
+			break;
+		hadError = consume(TOKEN_FROM, "Expected FROM after statement\n");
+		if (hadError)
+			break;
 		select->table_name = table();
-		// this is where other keywords like limit, where, subqueries... would be checked (TODO)
-		consume(TOKEN_SEMICOLON, "Statment must end with a semi colon\n");
-		statement.statemntType = TOKEN_SELECT;
-		statement.stmt.select = select;
+		if (select->table_name == NULL)
+		{
+			freeStatment();
+			break;
+		}
+		// this is where other keywords like limit, where, subqueries... would be checked (future TODO)
+		hadError = consume(TOKEN_SEMICOLON, "Statment must end with a semi colon\n");
+		if (hadError)
+			break;
 		break;
 	case TOKEN_INSERT:
-		InsertStmt *insert = ALLOCATE_MEMORY(InsertStmt, sizeof(InsertStmt), freeStatment);
 		statement.statemntType = TOKEN_INSERT;
+		InsertStmt *insert = ALLOCATE_MEMORY(InsertStmt, sizeof(InsertStmt), freeStatment);
 		statement.stmt.insert = insert;
 		break;
 	default:
