@@ -4,7 +4,7 @@
 
 int main()
 {
-	char *statement = "SELECT idname, FROM unidentiferedtbalename;";
+	char *statement = "SELECT idname FROM unidentiferedtbalename;";
 	initScanner(statement);
 	TokenList tokens = scanTokens();
 	if (tokens.size != 0)

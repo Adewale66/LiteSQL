@@ -16,12 +16,7 @@ void freeTokens()
 }
 static char *substring(char *source, int start, int length)
 {
-	char *sub = ALLOCATE_MEMORY(char, length + 1);
-	if (sub == NULL)
-	{
-		freeTokens();
-		exit(EXIT_FAILURE);
-	}
+	char *sub = ALLOCATE_MEMORY(char, length + 1, freeTokens);
 	memcpy(sub, source + start, length);
 	sub[length] = '\0';
 	return sub;
@@ -121,7 +116,7 @@ static void number()
 		advance();
 	Token token;
 	token.type = TOKEN_NUMBER;
-	token.literal = ALLOCATE_MEMORY(int, sizeof(int));
+	token.literal = ALLOCATE_MEMORY(int, sizeof(int), freeTokens);
 
 	char *text = substring(scanner.source, scanner.start, scanner.current - scanner.start);
 	int number = atoi(text);

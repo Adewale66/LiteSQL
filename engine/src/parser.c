@@ -93,7 +93,7 @@ static void addColumn(SelectStmt *stmt)
 			stmt->column_names = GROW_ARRAY(char *, stmt->column_names, oldCapacity, stmt->capacity);
 		}
 		char *name = (char *)previous().literal;
-		stmt->column_names[stmt->no_of_columns] = ALLOCATE_MEMORY(char, strlen(name) + 1);
+		stmt->column_names[stmt->no_of_columns] = ALLOCATE_MEMORY(char, strlen(name) + 1, freeStatment);
 		strcpy(stmt->column_names[stmt->no_of_columns], name);
 		stmt->no_of_columns++;
 	}
@@ -118,7 +118,7 @@ static char *table()
 	}
 
 	char *identifier_name = (char *)peek().literal;
-	char *table_name = ALLOCATE_MEMORY(char, strlen(identifier_name) + 1);
+	char *table_name = ALLOCATE_MEMORY(char, strlen(identifier_name) + 1, freeStatment);
 	strcpy(table_name, identifier_name);
 	advance();
 	return table_name;
@@ -131,11 +131,11 @@ static Statement parse()
 	switch (statementType.type)
 	{
 	case TOKEN_SELECT:
-		SelectStmt *select = ALLOCATE_MEMORY(SelectStmt, sizeof(SelectStmt)); // function pointet maybe?
+		SelectStmt *select = ALLOCATE_MEMORY(SelectStmt, sizeof(SelectStmt), freeStatment);
 		select->capacity = 0;
 		select->no_of_columns = 0;
 		select->all_tables = false;
-		select->column_names = ALLOCATE_MEMORY(char *, select->capacity * sizeof(char *));
+		select->column_names = ALLOCATE_MEMORY(char *, select->capacity * sizeof(char *), freeStatment);
 		while (match(2, TOKEN_STAR, TOKEN_IDENTIFIER))
 		{
 			addColumn(select);
@@ -153,7 +153,7 @@ static Statement parse()
 		statement.stmt.select = select;
 		break;
 	case TOKEN_INSERT:
-		InsertStmt *insert = ALLOCATE_MEMORY(InsertStmt, sizeof(InsertStmt));
+		InsertStmt *insert = ALLOCATE_MEMORY(InsertStmt, sizeof(InsertStmt), freeStatment);
 		statement.statemntType = TOKEN_INSERT;
 		statement.stmt.insert = insert;
 		break;

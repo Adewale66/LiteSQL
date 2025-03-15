@@ -11,8 +11,16 @@
 #define GROW_ARRAY(type, pointer, oldCount, newCount) \
 	(type *)reallocate(pointer, sizeof(type) * (newCount))
 
-#define ALLOCATE_MEMORY(type, size) \
-	(type *)allocate(size);
+#define ALLOCATE_MEMORY(type, size, cleanup) \
+	({                                       \
+		void *ptr = allocate(size);          \
+		if (!ptr)                            \
+		{                                    \
+			cleanup();                       \
+			exit(EXIT_FAILURE);              \
+		}                                    \
+		(type *)ptr;                         \
+	})
 
 void *reallocate(void *pointer, size_t newSize);
 void *allocate(int size);
