@@ -3,7 +3,7 @@
 
 #include <stdarg.h>
 #include "lexer.h"
-#include "errno.h"
+#include "error.h"
 
 typedef enum NodeType NodeType;
 typedef enum ValueType ValueType;
@@ -51,25 +51,26 @@ struct ASTNode
 typedef struct
 {
 	TokenList tokenlist;
+	ASTNode *root;
 	int current;
 
 } Parser;
 
-ASTNode *intiParser(TokenList tokens);
+ASTNode *initParser(TokenList tokens);
 void freeNode(ASTNode *node);
 void printAST(ASTNode *node, int indent);
-
-void cleanup();
 
 // Helper functions
 
 Token previous();
 Token peek();
-Token consume(TokenType type, char *errorMessage);
+void consume(TokenType type, char *errorMessage, bool *error);
 bool isAtEnd();
 Token advance();
 bool match(int n, ...);
 bool check(TokenType type);
+
+void memoryCleanup();
 
 ASTNode *selectStatement();
 #endif

@@ -196,7 +196,13 @@ static void scanToken()
 		// Ignore whitespace.
 		break;
 	case '!':
-		addToken(match('=') ? TOKEN_NOT_EQUALS : TOKEN_BANG);
+		if (match('='))
+			addToken(TOKEN_NOT_EQUALS);
+		else
+		{
+			hadError = true;
+			error("Invalid symbol");
+		}
 		break;
 	case '>':
 		addToken(match('=') ? TOKEN_GT_EQUALS : TOKEN_GT);
@@ -205,7 +211,15 @@ static void scanToken()
 		addToken(match('=') ? TOKEN_LT_EQUALS : TOKEN_LT);
 		break;
 	case '=':
-		addToken(TOKEN_EQUALS);
+		if (peek() == '=')
+		{
+			error("Invalid symbol");
+			hadError = true;
+		}
+		else
+		{
+			addToken(TOKEN_EQUALS);
+		}
 		break;
 	case '"':
 		string('"');

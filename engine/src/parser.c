@@ -1,6 +1,6 @@
 #include "parser.h"
 
-Parser parser;
+static Parser parser;
 
 void freeNode(ASTNode *node)
 {
@@ -17,10 +17,6 @@ void freeNode(ASTNode *node)
 	if (node->value.stringValue != NULL)
 	{
 		free(node->value.stringValue);
-	}
-	if (node->comparisonOperator != NULL)
-	{
-		free(node->comparisonOperator);
 	}
 	freeNode(node->left);
 	freeNode(node->right);
@@ -74,40 +70,43 @@ bool match(int n, ...)
 	return checked;
 }
 
-Token consume(TokenType type, char *error_message)
+void consume(TokenType type, char *error_message, bool *hadError)
 {
+	if (*hadError == true)
+		return;
 	if (check(type))
 	{
-		return advance();
+		advance();
+		return;
 	}
-	fprintf(stderr, "%s\n", error_message);
-	return advance(); // fix this
-}
-
-void cleanup()
-{
-	printf("todo cleanup here");
+	error(error_message);
+	*hadError = true;
+	return;
 }
 
 static ASTNode *parse()
 {
-	ASTNode *node = NULL;
 	if (match(1, TOKEN_SELECT))
 	{
-		node = selectStatement();
+		parser.root = selectStatement();
 		freeTokens();
-		return node;
 	}
-
-	fprintf(stderr, "Error: unsupported query type\n");
-	return NULL;
+	else
+		error("Unsupported query type.");
+	return parser.root;
 }
 
-ASTNode *intiParser(TokenList tokens)
+ASTNode *initParser(TokenList tokens)
 {
 	parser.tokenlist = tokens;
 	parser.current = 0;
+	parser.root = NULL;
 	return parse();
+}
+
+void memoryCleanup()
+{
+	freeNode(parser.root);
 }
 
 void printAST(ASTNode *node, int indent)

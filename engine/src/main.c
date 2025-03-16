@@ -3,13 +3,16 @@
 
 int main()
 {
-	char *statement = "SELECT id,name,state,place FROM unidentiferedtbalename where id = 1;";
+	char *statement = "SELECT id,name,state,place from somewhere where id > 1;";
 	initScanner(statement);
 	TokenList tokens = scanTokens();
 	if (tokens.size != 0)
 	{
-		ASTNode *root = intiParser(tokens);
-		printAST(root, 0);
-		freeNode(root);
+		ASTNode *root = initParser(tokens);
+		if (root != NULL)
+		{
+			printAST(root, 0);
+			freeNode(root);
+		}
 	}
 }

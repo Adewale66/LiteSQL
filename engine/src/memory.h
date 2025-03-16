@@ -3,6 +3,8 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+
 #include "error.h"
 
 #define GROW_CAPACITY(capacity) \
@@ -21,7 +23,17 @@
 		}                                    \
 		(type *)ptr;                         \
 	})
-
+#define COPY_STRING(string, cleanup)            \
+	({                                          \
+		char *ptr = strdup(string);             \
+		if (!ptr)                               \
+		{                                       \
+			error("Memory allocation failed!"); \
+			cleanup();                          \
+			exit(EXIT_FAILURE);                 \
+		}                                       \
+		ptr;                                    \
+	})
 void *reallocate(void *pointer, size_t newSize);
 void *allocate(int size);
 #endif

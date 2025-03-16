@@ -1,6 +1,7 @@
-#include <string.h>
 #include <strings.h>
 #include "parser.h"
+
+static bool hadError;
 
 static struct
 {
@@ -18,7 +19,7 @@ static int opCount = 6;
 
 static ASTNode *createNode(NodeType type)
 {
-	ASTNode *node = ALLOCATE_MEMORY(ASTNode, sizeof(ASTNode), cleanup);
+	ASTNode *node = ALLOCATE_MEMORY(ASTNode, sizeof(ASTNode), memoryCleanup);
 	node->type = type;
 	node->childCount = 0;
 	node->children = NULL;
@@ -39,28 +40,44 @@ static void addChild(ASTNode *parent, ASTNode *child)
 
 static void parseColumns(ASTNode *parent)
 {
+	if (hadError)
+		return;
 	while (match(1, TOKEN_IDENTIFIER))
 	{
 		ASTNode *columnNode = createNode(COLUMN);
-		columnNode->value.stringValue = strdup((char *)previous().literal); // handle memory fail (TODO)
 		addChild(parent, columnNode);
+		columnNode->value.stringValue = COPY_STRING((char *)previous().literal, memoryCleanup);
 
-		if (!match(1, TOKEN_COMMA))
+		if (match(1, TOKEN_COMMA))
+		{
+			if (peek().type != TOKEN_IDENTIFIER)
+			{
+				error("Expected identifier after ','.");
+				hadError = true;
+				break;
+			}
+		}
+		else
 			break;
 	}
 }
 
 static void parseTable(ASTNode *parent)
 {
+	if (hadError)
+		return;
 	Token current = advance();
 	if (current.type != TOKEN_IDENTIFIER)
 	{
-		printf("Error at tbale");
+		hadError = true;
+		error("Expected table name.");
 		return;
 	}
 	ASTNode *table = createNode(TABLE);
-	table->value.stringValue = strdup((char *)current.literal);
+
 	addChild(parent, table);
+
+	table->value.stringValue = COPY_STRING((char *)current.literal, memoryCleanup);
 }
 
 static char *getOp(TokenType type)
@@ -74,8 +91,14 @@ static char *getOp(TokenType type)
 }
 static void parseWhere(ASTNode *parent)
 {
+	if (hadError)
+		return;
 	ASTNode *condition = createNode(WHERE);
 	ASTNode *comparison = createNode(COMPARISON);
+
+	addChild(condition, comparison);
+	addChild(parent, condition);
+
 	ASTNode *left = NULL;
 	if (peek().type == TOKEN_NUMBER)
 	{
@@ -85,24 +108,31 @@ static void parseWhere(ASTNode *parent)
 	else if (peek().type == TOKEN_IDENTIFIER)
 	{
 		left = createNode(ID);
-		left->value.stringValue = strdup((char *)peek().literal);
+		left->value.stringValue = COPY_STRING((char *)peek().literal, memoryCleanup);
 	}
-	if (left == NULL)
+	else
 	{
-		// handle this
+		error("Unexpected identifier");
+		hadError = true;
 		return;
 	}
+
+	comparison->left = left;
+
 	advance();
 	Token op = peek();
 
 	char *operator= getOp(op.type);
 	if (operator== NULL)
 	{
-		// Handle error
+		error("Expected 'operator'");
+		hadError = true;
 		return;
 	}
-	comparison->comparisonOperator = strdup(operator);
+	comparison->comparisonOperator = operator;
+
 	advance();
+
 	ASTNode *right = NULL;
 	if (peek().type == TOKEN_NUMBER)
 	{
@@ -112,31 +142,36 @@ static void parseWhere(ASTNode *parent)
 	else if (peek().type == TOKEN_IDENTIFIER)
 	{
 		right = createNode(ID);
-		right->value.stringValue = strdup((char *)peek().literal);
+		right->value.stringValue = COPY_STRING((char *)peek().literal, memoryCleanup);
 	}
-	if (left == NULL)
+	else
 	{
-		// handle this
+		error("Unexpected identifier");
+		hadError = true;
 		return;
 	}
-	comparison->left = left;
 	comparison->right = right;
-	addChild(condition, comparison);
-	addChild(parent, condition);
+
 	advance();
 }
 
 ASTNode *selectStatement()
 {
+	hadError = false;
 	ASTNode *selectNode = createNode(SELECT);
 	parseColumns(selectNode);
-	consume(TOKEN_FROM, "Error: expected from statement.");
+	consume(TOKEN_FROM, "Expected \"FROM\" after table name.", &hadError);
 	parseTable(selectNode);
 
 	if (match(1, TOKEN_WHERE))
 		parseWhere(selectNode);
 
-	consume(TOKEN_SEMICOLON, "Query must end with a semi colon.");
+	consume(TOKEN_SEMICOLON, "Expected ';' after query.", &hadError);
 
+	if (hadError)
+	{
+		freeNode(selectNode);
+		return NULL;
+	}
 	return selectNode;
 }
