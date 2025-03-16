@@ -15,6 +15,12 @@ void freeTokens()
 	scanner.tokenList.size = 0;
 	scanner.tokenList.tokens = NULL;
 }
+
+static bool isAtEnd()
+{
+	return scanner.current >= scanner.source_length;
+}
+
 static char *substring(char *source, int start, int length)
 {
 	char *sub = ALLOCATE_MEMORY(char, length + 1, freeTokens);
@@ -23,7 +29,17 @@ static char *substring(char *source, int start, int length)
 	return sub;
 }
 
-static TokenType findType(char *text)
+static bool match(char expected)
+{
+	if (isAtEnd())
+		return false;
+	if (scanner.source[scanner.current] != expected)
+		return false;
+	scanner.current++;
+	return true;
+}
+
+static TokenType findKeyword(char *text)
 {
 	if (strcasecmp("select", text) == 0)
 	{
@@ -44,6 +60,10 @@ static TokenType findType(char *text)
 	if (strcasecmp("into", text) == 0)
 	{
 		return TOKEN_INTO;
+	}
+	if (strcasecmp("where", text) == 0)
+	{
+		return TOKEN_WHERE;
 	}
 	return TOKEN_NULL;
 }
@@ -94,11 +114,6 @@ static void addToken(TokenType type)
 	addToArray(&scanner.tokenList, token);
 }
 
-static bool isAtEnd()
-{
-	return scanner.current >= scanner.source_length;
-}
-
 static char advance()
 {
 	return scanner.source[scanner.current++];
@@ -132,16 +147,16 @@ static void identifier()
 	while (isalnum(peek()))
 		advance();
 	char *text = substring(scanner.source, scanner.start, scanner.current - scanner.start);
-	TokenType type = findType(text);
+	TokenType type = findKeyword(text);
 	if (type == TOKEN_NULL)
 		type = TOKEN_IDENTIFIER;
 	free(text);
 	addToken(type);
 }
 
-static void string()
+static void string(char end)
 {
-	while (peek() != '"' && !isAtEnd())
+	while (peek() != end && !isAtEnd())
 	{
 		advance();
 	}
@@ -185,8 +200,23 @@ static void scanToken()
 	case '\n':
 		// Ignore whitespace.
 		break;
+	case '!':
+		addToken(match('=') ? TOKEN_NOT_EQUALS : TOKEN_BANG);
+		break;
+	case '>':
+		addToken(match('=') ? TOKEN_GT_EQUALS : TOKEN_GT);
+		break;
+	case '<':
+		addToken(match('=') ? TOKEN_LT_EQUALS : TOKEN_LT);
+		break;
+	case '=':
+		addToken(TOKEN_EQUALS);
+		break;
 	case '"':
-		string();
+		string('"');
+		break;
+	case '\'':
+		string('\'');
 		break;
 	default:
 		if (isdigit(c))

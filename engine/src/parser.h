@@ -14,7 +14,11 @@ enum NodeType
 {
 	SELECT,
 	TABLE,
-	COLUMN
+	COLUMN,
+	WHERE,
+	COMPARISON,
+	ID,
+	NUMBER
 };
 
 enum ValueType

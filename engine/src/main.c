@@ -3,7 +3,7 @@
 
 int main()
 {
-	char *statement = "SELECT id,name,state,place FROM unidentiferedtbalename;";
+	char *statement = "SELECT id,name,state,place FROM unidentiferedtbalename where id = 1;";
 	initScanner(statement);
 	TokenList tokens = scanTokens();
 	if (tokens.size != 0)

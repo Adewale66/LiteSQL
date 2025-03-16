@@ -122,12 +122,21 @@ void printAST(ASTNode *node, int indent)
 	case SELECT:
 		printf("SELECT\n");
 		break;
-
 	case COLUMN:
+	case ID:
 		printf("COLUMN: %s\n", node->value.stringValue);
 		break;
 	case TABLE:
 		printf("TABLE: %s\n", node->value.stringValue);
+		break;
+	case WHERE:
+		printf("WHERE\n");
+		break;
+	case COMPARISON:
+		printf("COMPARISON: %s\n", node->comparisonOperator);
+		break;
+	case NUMBER:
+		printf("LITERAL_INT: %d\n", node->value.intValue);
 		break;
 	}
 
