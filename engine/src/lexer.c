@@ -78,7 +78,7 @@ static void addToArray(TokenList *list, Token token)
 	{
 		int oldCapacity = list->capacity;
 		list->capacity = GROW_CAPACITY(oldCapacity);
-		list->tokens = GROW_ARRAY(Token, list->tokens, oldCapacity, list->capacity);
+		list->tokens = GROW_ARRAY(Token, list->tokens, list->capacity);
 	}
 
 	list->tokens[list->size] = token;
@@ -153,7 +153,7 @@ static void string()
 	}
 	advance();
 	Token token;
-	token.type = TOKEN_STRING;
+	token.type = TOKEN_IDENTIFIER;
 	char *text = substring(scanner.source, scanner.start + 1, scanner.current - scanner.start - 2);
 	token.literal = text;
 	addToArray(&scanner.tokenList, token);
@@ -258,10 +258,7 @@ void printToken(Token token)
 		printf("EOF");
 		break;
 	case TOKEN_NUMBER:
-		printf("NUMBER: %f", *((double *)token.literal));
-		break;
-	case TOKEN_STRING:
-		printf("STRING: %s", (char *)token.literal);
+		printf("NUMBER: %d", *((int *)token.literal));
 		break;
 	case TOKEN_LPAREN:
 		printf("LEFT_PARENT");

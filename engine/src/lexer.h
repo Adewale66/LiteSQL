@@ -26,7 +26,6 @@ typedef enum
 	TOKEN_INTO,
 	TOKEN_LPAREN,
 	TOKEN_RPAREN,
-	TOKEN_STRING
 } TokenType;
 
 typedef struct

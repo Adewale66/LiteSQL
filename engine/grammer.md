@@ -1,6 +1,5 @@
 ```
-query          → statement EOF ;
-statement      → selectStmt | insertStmt ;
+query          → selectStmt | insertStmt ;
 selectStmt     → "SELECT" ( "*" | column ("," column)* ) "FROM" table ";" ;
 insertStmt     → "INSERT" "INTO" table ( "(" column ("," column)* ") )?"
                  "VALUES" "(" value ("," value)* ")" ";" ;
