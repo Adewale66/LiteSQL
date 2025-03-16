@@ -3,6 +3,19 @@
 static Scanner scanner;
 static bool hadError;
 
+static struct
+{
+	char *keyword;
+	TokenType type;
+} keywords[] = {
+	{"select", TOKEN_SELECT},
+	{"insert", TOKEN_INSERT},
+	{"from", TOKEN_FROM},
+	{"where", TOKEN_WHERE},
+	{"values", TOKEN_VALUES},
+	{"into", TOKEN_INTO}};
+static int keywordCount = 6;
+
 void freeTokens()
 {
 	for (int i = 0; i < scanner.tokenList.size; i++)
@@ -41,30 +54,12 @@ static bool match(char expected)
 
 static TokenType findKeyword(char *text)
 {
-	if (strcasecmp("select", text) == 0)
+	for (int i = 0; i < keywordCount; i++)
 	{
-		return TOKEN_SELECT;
+		if (strcasecmp(keywords[i].keyword, text) == 0)
+			return keywords[i].type;
 	}
-	if (strcasecmp("insert", text) == 0)
-	{
-		return TOKEN_INSERT;
-	}
-	if (strcasecmp("from", text) == 0)
-	{
-		return TOKEN_FROM;
-	}
-	if (strcasecmp("values", text) == 0)
-	{
-		return TOKEN_VALUES;
-	}
-	if (strcasecmp("into", text) == 0)
-	{
-		return TOKEN_INTO;
-	}
-	if (strcasecmp("where", text) == 0)
-	{
-		return TOKEN_WHERE;
-	}
+
 	return TOKEN_NULL;
 }
 
