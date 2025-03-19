@@ -195,7 +195,7 @@ BTree *delete(BTree *node, BTree *parent, int index, int value)
 			{
 				// Merge with one of the it's siblings
 				int parentValue = 0;
-				int count = node->keyCount;
+				int parentCount = parent->keyCount;
 				if (leftIdx >= 0)
 				{
 					parentValue = parent->keys[index - 1];
@@ -215,19 +215,18 @@ BTree *delete(BTree *node, BTree *parent, int index, int value)
 						parent->keys[i] = parent->keys[i + 1];
 					}
 					parent->keyCount--;
-					// FIX this (move over node and free last node)
 					int nl = binarySearch(0, parent->children[leftIdx]->keyCount, value, parent->children[leftIdx]);
 
 					for (int i = nl; i < parent->children[leftIdx]->keyCount - 1; i++)
 					{
 						parent->children[leftIdx]->keys[i] = parent->children[leftIdx]->keys[i + 1];
 					}
-					// parent->children[leftIdx]
-					// parent->children[leftIdx]->keyCount--;
-					for (int i = index; i < count - 1; i++)
+					parent->children[leftIdx]->keyCount--;
+					for (int i = index; i < parentCount - 1; i++)
 					{
 						parent->children[i] = parent->children[i + 1];
 					}
+					free(parent->children[parentCount]);
 				}
 				else if (rightIdx <= MAX_DEGREE)
 				{
@@ -240,6 +239,30 @@ BTree *delete(BTree *node, BTree *parent, int index, int value)
 					}
 					parent->children[rightIdx]->keyCount++;
 					parent->children[rightIdx]->keys[0] = parentValue;
+
+					int idx = 0;
+					for (int i = node->keyCount; idx < parent->children[rightIdx]->keyCount - 1; i++)
+					{
+						node->keys[i] = parent->children[rightIdx]->keys[0];
+						node->keyCount++;
+						idx++;
+					}
+					int nl = binarySearch(0, node->keyCount, value, node);
+
+					for (int i = nl; i < node->keyCount - 1; i++)
+					{
+						node->keys[i] = node->keys[i + 1];
+					}
+					node->keyCount--;
+					for (int i = index + 1; i < parentCount - 1; i++)
+					{
+						parent->children[i] = parent->children[i + 1];
+					}
+					free(parent->children[parentCount]);
+				}
+				else
+				{
+					// my head o!
 				}
 			}
 		}
