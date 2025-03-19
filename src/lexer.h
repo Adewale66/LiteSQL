@@ -7,7 +7,6 @@
 #include <ctype.h>
 #include <strings.h>
 #include <stdlib.h>
-#include "error.h"
 #include "memory.h"
 
 typedef enum

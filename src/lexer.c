@@ -68,7 +68,7 @@ bool initScanner(char *source)
 
 	if (source == NULL)
 	{
-		error("Source can not be null");
+		fprintf(stderr, "Error: Source can not be null\n");
 		return false;
 	}
 	hadError = false;
@@ -157,7 +157,7 @@ static void string(char end)
 	}
 	if (isAtEnd())
 	{
-		error("Unterminated string");
+		fprintf(stderr, "Error: Unterminated string\n");
 		hadError = true;
 		return;
 	}
@@ -201,7 +201,7 @@ static void scanToken()
 		else
 		{
 			hadError = true;
-			error("Invalid symbol");
+			fprintf(stderr, "Error: Invalid symbol\n");
 		}
 		break;
 	case '>':
@@ -213,7 +213,7 @@ static void scanToken()
 	case '=':
 		if (peek() == '=')
 		{
-			error("Invalid symbol");
+			fprintf(stderr, "Error: Invalid symbol\n");
 			hadError = true;
 		}
 		else
@@ -241,7 +241,7 @@ static void scanToken()
 			char *format = "Unexpected character: %c";
 			char message[25];
 			sprintf(message, format, c);
-			error(message);
+			fprintf(stderr, "Error: %s\n", message);
 			hadError = true;
 		}
 		break;

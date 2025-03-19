@@ -1,5 +1,5 @@
 - [x] Scan source to Tokens
-- [x] create ast
 - [x] error handling
+- [] create ast
 - [] bytecode generator
-- [] add unix sockets
+- [] btrees

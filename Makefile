@@ -22,10 +22,7 @@ $(OBJDIR) $(BINDIR):
 	mkdir -p $@
 
 memory:
-	valgrind ${VFlags} ${TARGET}
-
-run:
-	./${TARGET}
+	valgrind ${VFlags} ${TARGET} $(ARGS)
 
 clean:
 	rm -rf $(OBJDIR) $(BINDIR)

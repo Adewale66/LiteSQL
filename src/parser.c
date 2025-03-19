@@ -6,21 +6,37 @@ void freeNode(ASTNode *node)
 {
 	if (node == NULL)
 		return;
+
 	if (node->children != NULL)
 	{
 		for (int i = 0; i < node->childCount; i++)
 		{
 			freeNode(node->children[i]);
+			node->children[i] = NULL;
 		}
 		free(node->children);
+		node->children = NULL;
+		node->childCount = 0;
 	}
-	if (node->value.stringValue != NULL)
+
+	if (node->type != NUMBER)
 	{
-		free(node->value.stringValue);
+
+		if (node->value.stringValue != NULL)
+		{
+			free(node->value.stringValue);
+			node->value.stringValue = NULL;
+		}
 	}
+
 	freeNode(node->left);
+	node->left = NULL;
+
 	freeNode(node->right);
+	node->right = NULL;
+
 	free(node);
+	node = NULL;
 }
 
 Token previous()
@@ -70,18 +86,16 @@ bool match(int n, ...)
 	return checked;
 }
 
-void consume(TokenType type, char *error_message, bool *hadError)
+bool consume(TokenType type, char *error_message)
 {
-	if (*hadError == true)
-		return;
+
 	if (check(type))
 	{
 		advance();
-		return;
+		return true;
 	}
-	error(error_message);
-	*hadError = true;
-	return;
+	fprintf(stderr, "%s\n", error_message);
+	return false;
 }
 
 static ASTNode *parse()
@@ -92,7 +106,7 @@ static ASTNode *parse()
 		freeTokens();
 	}
 	else
-		error("Unsupported query type.");
+		fprintf(stderr, "Error: Unsupported query type.\n");
 	return parser.root;
 }
 
@@ -102,11 +116,6 @@ ASTNode *initParser(TokenList tokens)
 	parser.current = 0;
 	parser.root = NULL;
 	return parse();
-}
-
-void memoryCleanup()
-{
-	freeNode(parser.root);
 }
 
 void printAST(ASTNode *node, int indent)

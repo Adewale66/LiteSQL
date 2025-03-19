@@ -3,7 +3,6 @@
 
 #include <stdarg.h>
 #include "lexer.h"
-#include "error.h"
 
 typedef enum NodeType NodeType;
 typedef enum ValueType ValueType;
@@ -18,7 +17,7 @@ enum NodeType
 	WHERE,
 	COMPARISON,
 	ID,
-	NUMBER
+	NUMBER,
 };
 
 enum ValueType
@@ -64,13 +63,11 @@ void printAST(ASTNode *node, int indent);
 
 Token previous();
 Token peek();
-void consume(TokenType type, char *errorMessage, bool *error);
+bool consume(TokenType type, char *errorMessage);
 bool isAtEnd();
 Token advance();
 bool match(int n, ...);
 bool check(TokenType type);
-
-void memoryCleanup();
 
 ASTNode *selectStatement();
 #endif

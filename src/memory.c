@@ -11,7 +11,7 @@ void *reallocate(void *pointer, size_t newSize)
 	void *result = realloc(pointer, newSize);
 	if (!result)
 	{
-		error("Memory reallocation failed!");
+		fprintf(stderr, "Memory reallocation failed!\n");
 		return NULL;
 	}
 	return result;
@@ -22,7 +22,7 @@ void *allocate(int size)
 	void *result = malloc(size);
 	if (result == NULL)
 	{
-		error("Memory reallocation failed!");
+		fprintf(stderr, "Memory reallocation failed!\n");
 		return NULL;
 	}
 
