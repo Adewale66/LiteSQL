@@ -132,6 +132,121 @@ BTree *insert(BTree *node, BTree *parent, int value, int index)
 	return node;
 }
 
+BTree *delete(BTree *node, BTree *parent, int index, int value)
+{
+
+	int l = binarySearch(0, node->keyCount, value, node);
+	if (l >= node->keyCount)
+	{
+		node->children[l] = delete (node->children[l], node, l, value);
+		return node;
+	}
+
+	if (node->leaf)
+	{
+		// If leaf contains more than min no of keys
+		if (node->keyCount > MIN_KEYS)
+		{
+			for (int i = l; i < node->keyCount - 1; i++)
+			{
+				node->keys[i] = node->keys[i + 1];
+			}
+			node->keyCount--;
+			return node;
+		}
+		else
+		{
+			// Check siblings if a key can be borrowed
+			int leftIdx = index - 1;
+			int rightIdx = index + 1;
+			if (leftIdx >= 0 && parent->children[leftIdx]->keyCount > MIN_KEYS)
+			{
+				int maxLeft = parent->children[leftIdx]->keys[parent->keyCount - 1];
+				parent->children[leftIdx]->keys[parent->keyCount - 1] = 0;
+				parent->children[leftIdx]->keyCount--;
+				int parentValue = parent->keys[index - 1];
+				parent->keys[index - 1] = maxLeft;
+				for (int i = l; i > 0; i--)
+				{
+					node->keys[i] = node->keys[i - 1];
+				}
+				node->keys[0] = parentValue;
+			}
+			if (rightIdx <= MAX_DEGREE && parent->children[rightIdx]->keyCount > MIN_KEYS)
+			{
+				int minRight = parent->children[rightIdx]->keys[0];
+
+				for (int i = 0; i < parent->children[rightIdx]->keyCount - 1; i++)
+				{
+					parent->children[rightIdx]->keys[i] = parent->children[rightIdx]->keys[i + 1];
+				}
+
+				parent->children[rightIdx]->keyCount--;
+				int parentValue = parent->keys[index + 1];
+				parent->keys[index + 1] = minRight;
+
+				for (int i = l; i < node->keyCount - 1; i++)
+				{
+					node->keys[i] = node->keys[i + 1];
+				}
+				node->keys[node->keyCount - 1] = parentValue;
+			}
+			else
+			{
+				// Merge with one of the it's siblings
+				int parentValue = 0;
+				int count = node->keyCount;
+				if (leftIdx >= 0)
+				{
+					parentValue = parent->keys[index - 1];
+					// merge left node and current node
+
+					int idx = 0;
+					parent->children[leftIdx]->keys[parent->children[leftIdx]->keyCount++] = parentValue;
+
+					for (int i = parent->children[leftIdx]->keyCount; idx < node->keyCount; i++)
+					{
+						parent->children[leftIdx]->keys[i] = node->keys[idx++];
+						parent->children[leftIdx]->keyCount++;
+					}
+
+					for (int i = index - 1; i < parent->keyCount - 1; i++)
+					{
+						parent->keys[i] = parent->keys[i + 1];
+					}
+					parent->keyCount--;
+					// FIX this (move over node and free last node)
+					int nl = binarySearch(0, parent->children[leftIdx]->keyCount, value, parent->children[leftIdx]);
+
+					for (int i = nl; i < parent->children[leftIdx]->keyCount - 1; i++)
+					{
+						parent->children[leftIdx]->keys[i] = parent->children[leftIdx]->keys[i + 1];
+					}
+					// parent->children[leftIdx]
+					// parent->children[leftIdx]->keyCount--;
+					for (int i = index; i < count - 1; i++)
+					{
+						parent->children[i] = parent->children[i + 1];
+					}
+				}
+				else if (rightIdx <= MAX_DEGREE)
+				{
+					parentValue = parent->keys[index + 1];
+					int idx = 0;
+
+					for (int i = parent->children[rightIdx]->keyCount; i > 0; i--)
+					{
+						parent->children[rightIdx]->keys[i] = parent->children[rightIdx]->keys[i - 1];
+					}
+					parent->children[rightIdx]->keyCount++;
+					parent->children[rightIdx]->keys[0] = parentValue;
+				}
+			}
+		}
+	}
+	return node;
+}
+
 void printBTree(BTree *root, int level)
 {
 	if (root == NULL)
