@@ -17,6 +17,126 @@ static int binarySearch(int l, int r, int value, BTree *node)
 	return l;
 }
 
+static BTree *balanceNode(BTree *node, BTree *parent, int index)
+{
+	int leftSibling = index - 1;
+	int rightSibling = index + 1;
+
+	if (leftSibling >= 0 && parent->children[leftSibling]->keyCount > MIN_KEYS)
+	{
+		printf("camher hrer 6\n");
+
+		BTree *lastChild = parent->children[leftSibling]->children[parent->children[leftSibling]->keyCount];
+		int maxLeft = parent->children[leftSibling]->keys[parent->children[leftSibling]->keyCount - 1];
+		parent->children[leftSibling]->keyCount--;
+		int parentValue = parent->keys[index - 1];
+		parent->keys[index - 1] = maxLeft;
+		for (int i = node->keyCount; i > 0; i--)
+		{
+			node->keys[i] = node->keys[i + 1];
+		}
+		node->keys[0] = parentValue;
+		node->keyCount++;
+
+		for (int i = node->keyCount; i > 0; i--)
+		{
+			node->children[i] = node->children[i - 1];
+		}
+		node->children[0] = lastChild;
+	}
+	else if (rightSibling >= MAX_DEGREE && parent->children[rightSibling]->keyCount > MIN_KEYS)
+	{
+		printf("camher hrer 7\n");
+
+		int parentValue = parent->keys[index];
+		BTree *firstChild = parent->children[rightSibling]->children[0];
+		node->keys[node->keyCount++] = parentValue;
+		int minRight = parent->children[rightSibling]->keys[0];
+		parent->keys[index] = minRight;
+		for (int i = 0; i < parent->children[rightSibling]->keyCount - 1; i++)
+		{
+			parent->children[rightSibling]->keys[i] = parent->children[rightSibling]->keys[i + 1];
+		}
+		parent->children[rightSibling]->keyCount--;
+		node->children[node->keyCount] = firstChild;
+		for (int i = 0; i <= parent->children[rightSibling]->keyCount; i++)
+		{
+			parent->children[rightSibling]->children[i] = parent->children[rightSibling]->children[i + 1];
+		}
+	}
+	else
+	{
+		printf("camher hrer 8\n");
+
+		int parentValue;
+		int parentCount = parent->keyCount;
+		if (leftSibling >= 0)
+		{
+			printf("camher hrer 9\n");
+
+			parentValue = parent->keys[index - 1];
+			parent->children[leftSibling]->keys[parent->children[leftSibling]->keyCount++] = parentValue;
+
+			int childrenCount = parent->children[leftSibling]->keyCount;
+
+			for (int i = 0; i < node->keyCount; i++)
+			{
+				parent->children[leftSibling]->keys[parent->children[leftSibling]->keyCount++] = node->keys[i];
+			}
+
+			for (int i = 0; i <= node->keyCount; i++)
+			{
+
+				parent->children[leftSibling]->children[childrenCount++] = node->children[i];
+			}
+			for (int i = index - 1; i < parent->keyCount - 1; i++)
+			{
+				parent->keys[i] = parent->keys[i + 1];
+			}
+			parent->keyCount--;
+			free(parent->children[index]);
+			for (int i = index; i < parentCount; i++)
+			{
+
+				parent->children[i] = parent->children[i + 1];
+			}
+			node = parent->children[index];
+		}
+		else
+		{
+			printf("camher hrer 10\n");
+
+			int oldCount = node->keyCount;
+			parentValue = parent->keys[index];
+			node->keys[node->keyCount++] = parentValue;
+
+			for (int i = 0; i < parent->children[rightSibling]->keyCount; i++)
+			{
+				node->keys[node->keyCount++] = parent->children[rightSibling]->keys[i];
+			}
+
+			for (int i = index; i < parent->keyCount - 1; i++)
+			{
+				parent->keys[i] = parent->keys[i + 1];
+			}
+			parent->keyCount--;
+
+			int idx = 0;
+			for (int i = oldCount + 1; idx <= parent->children[rightSibling]->keyCount; i++)
+			{
+				node->children[i] = parent->children[rightSibling]->children[idx];
+				idx++;
+			}
+			free(parent->children[index + 1]);
+			for (int i = index + 1; i < parentCount; i++)
+			{
+				parent->children[i] = parent->children[i + 1];
+			}
+		}
+	}
+	return node;
+}
+
 static BTree *balance(BTree *node, BTree *parent, int passedIndex)
 {
 	int mid = node->keyCount / 2;
@@ -136,16 +256,34 @@ BTree *delete(BTree *node, BTree *parent, int index, int value)
 {
 
 	int l = binarySearch(0, node->keyCount, value, node);
-	if (l >= node->keyCount)
+	if (l >= node->keyCount || node->keys[l] != value)
 	{
+		if (value == 160)
+			printf("camher hrer 0\n");
 		node->children[l] = delete (node->children[l], node, l, value);
+		// parent check here
+		if (node->keyCount < MIN_KEYS && parent != NULL)
+		{
+			printf("camher hrer 0111\n");
+			node = balanceNode(node, parent, index);
+		}
+		else
+		{
+			if (node->keyCount == 0)
+			{
+				BTree *root = node->children[l];
+				free(node);
+				return root;
+			}
+		}
 		return node;
 	}
 
 	if (node->leaf)
 	{
-		// If leaf contains more than min no of keys
-		if (node->keyCount > MIN_KEYS)
+		printf("camher hrer 1\n");
+		// If leaf contains more than min no of keys or is root
+		if (node->keyCount > MIN_KEYS || parent == NULL)
 		{
 			for (int i = l; i < node->keyCount - 1; i++)
 			{
@@ -161,8 +299,8 @@ BTree *delete(BTree *node, BTree *parent, int index, int value)
 			int rightIdx = index + 1;
 			if (leftIdx >= 0 && parent->children[leftIdx]->keyCount > MIN_KEYS)
 			{
-				int maxLeft = parent->children[leftIdx]->keys[parent->keyCount - 1];
-				parent->children[leftIdx]->keys[parent->keyCount - 1] = 0;
+				printf("camher hrer 2\n");
+				int maxLeft = parent->children[leftIdx]->keys[parent->children[leftIdx]->keyCount - 1];
 				parent->children[leftIdx]->keyCount--;
 				int parentValue = parent->keys[index - 1];
 				parent->keys[index - 1] = maxLeft;
@@ -172,8 +310,10 @@ BTree *delete(BTree *node, BTree *parent, int index, int value)
 				}
 				node->keys[0] = parentValue;
 			}
-			if (rightIdx <= MAX_DEGREE && parent->children[rightIdx]->keyCount > MIN_KEYS)
+			else if (rightIdx <= MAX_DEGREE && parent->children[rightIdx]->keyCount > MIN_KEYS)
 			{
+				printf("camher hrer 3\n");
+
 				int minRight = parent->children[rightIdx]->keys[0];
 
 				for (int i = 0; i < parent->children[rightIdx]->keyCount - 1; i++)
@@ -182,8 +322,8 @@ BTree *delete(BTree *node, BTree *parent, int index, int value)
 				}
 
 				parent->children[rightIdx]->keyCount--;
-				int parentValue = parent->keys[index + 1];
-				parent->keys[index + 1] = minRight;
+				int parentValue = parent->keys[index];
+				parent->keys[index] = minRight;
 
 				for (int i = l; i < node->keyCount - 1; i++)
 				{
@@ -193,21 +333,21 @@ BTree *delete(BTree *node, BTree *parent, int index, int value)
 			}
 			else
 			{
+
 				// Merge with one of the it's siblings
 				int parentValue = 0;
 				int parentCount = parent->keyCount;
 				if (leftIdx >= 0)
 				{
+					printf("camher hrer 4\n");
 					parentValue = parent->keys[index - 1];
 					// merge left node and current node
 
-					int idx = 0;
 					parent->children[leftIdx]->keys[parent->children[leftIdx]->keyCount++] = parentValue;
 
-					for (int i = parent->children[leftIdx]->keyCount; idx < node->keyCount; i++)
+					for (int i = 0; i < node->keyCount; i++)
 					{
-						parent->children[leftIdx]->keys[i] = node->keys[idx++];
-						parent->children[leftIdx]->keyCount++;
+						parent->children[leftIdx]->keys[parent->children[leftIdx]->keyCount++] = node->keys[i];
 					}
 
 					for (int i = index - 1; i < parent->keyCount - 1; i++)
@@ -222,50 +362,55 @@ BTree *delete(BTree *node, BTree *parent, int index, int value)
 						parent->children[leftIdx]->keys[i] = parent->children[leftIdx]->keys[i + 1];
 					}
 					parent->children[leftIdx]->keyCount--;
-					for (int i = index; i < parentCount - 1; i++)
+
+					free(parent->children[index]);
+					for (int i = index; i < parentCount; i++)
 					{
 						parent->children[i] = parent->children[i + 1];
 					}
-					free(parent->children[parentCount]);
+					node = parent->children[index];
 				}
 				else if (rightIdx <= MAX_DEGREE)
 				{
-					parentValue = parent->keys[index + 1];
-					int idx = 0;
 
-					for (int i = parent->children[rightIdx]->keyCount; i > 0; i--)
+					parentValue = parent->keys[index];
+					printf("camher hrer 5 \n");
+
+					node->keys[node->keyCount++] = parentValue;
+					for (int i = index; i < parent->keyCount - 1; i++)
 					{
-						parent->children[rightIdx]->keys[i] = parent->children[rightIdx]->keys[i - 1];
+						parent->keys[i] = parent->keys[i + 1];
 					}
-					parent->children[rightIdx]->keyCount++;
-					parent->children[rightIdx]->keys[0] = parentValue;
+					parent->keyCount--;
 
 					int idx = 0;
-					for (int i = node->keyCount; idx < parent->children[rightIdx]->keyCount - 1; i++)
+					for (int i = node->keyCount; idx < parent->children[rightIdx]->keyCount; i++)
 					{
-						node->keys[i] = parent->children[rightIdx]->keys[0];
+						node->keys[i] = parent->children[rightIdx]->keys[idx];
 						node->keyCount++;
 						idx++;
 					}
+
 					int nl = binarySearch(0, node->keyCount, value, node);
 
 					for (int i = nl; i < node->keyCount - 1; i++)
 					{
 						node->keys[i] = node->keys[i + 1];
 					}
+
 					node->keyCount--;
-					for (int i = index + 1; i < parentCount - 1; i++)
+					free(parent->children[index + 1]);
+					for (int i = index + 1; i < parentCount; i++)
 					{
 						parent->children[i] = parent->children[i + 1];
 					}
-					free(parent->children[parentCount]);
-				}
-				else
-				{
-					// my head o!
 				}
 			}
 		}
+	}
+	else
+	{
+		// internal node
 	}
 	return node;
 }

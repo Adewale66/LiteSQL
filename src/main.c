@@ -23,18 +23,24 @@ int main()
 	// LOAD MASTER TABLE INTO MEMORY
 	// INIT VM
 
-	BTree *root = insert(NULL, NULL, 50, -1);
-	root = insert(root, NULL, 30, -1);
-	root = insert(root, NULL, 70, -1);
-	// root = insert(root, NULL, 20, -1);
-	// root = insert(root, NULL, 40, -1);
-	// root = insert(root, NULL, 60, -1);
-	// root = insert(root, NULL, 80, -1);
-	// root = insert(root, NULL, 10, -1);
-	// root = insert(root, NULL, 90, -1);
-	// root = insert(root, NULL, 25, -1);
-	root = delete (root, NULL, -1, 70);
-	// printBTree(root, 0);
+	BTree *root = NULL;
+	int nums[] = {50, 30, 70, 10, 40, 60, 80, 5, 15, 35, 45, 55, 65, 75, 85};
+	int len = 15;
 
+	for (int i = 0; i < len; i++)
+	{
+		root = insert(root, NULL, nums[i], -1);
+	}
+
+	root = delete (root, NULL, -1, 5);
+	root = delete (root, NULL, -1, 15);
+	root = delete (root, NULL, -1, 35);
+	root = delete (root, NULL, -1, 45);
+	root = delete (root, NULL, -1, 55);
+	root = delete (root, NULL, -1, 65);
+	root = delete (root, NULL, -1, 75);
+	root = delete (root, NULL, -1, 85);
+
+	printBTree(root, 0);
 	freeBTree(root);
 }
