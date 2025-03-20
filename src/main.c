@@ -32,14 +32,14 @@ int main()
 		root = insert(root, NULL, nums[i], -1);
 	}
 
-	root = delete (root, NULL, -1, 5);
-	root = delete (root, NULL, -1, 15);
-	root = delete (root, NULL, -1, 35);
-	root = delete (root, NULL, -1, 45);
-	root = delete (root, NULL, -1, 55);
-	root = delete (root, NULL, -1, 65);
-	root = delete (root, NULL, -1, 75);
-	root = delete (root, NULL, -1, 85);
+	root = delete (root, NULL, -1, 50);
+	// root = delete (root, NULL, -1, 15);
+	// root = delete (root, NULL, -1, 35);
+	// root = delete (root, NULL, -1, 45);
+	// root = delete (root, NULL, -1, 55);
+	// root = delete (root, NULL, -1, 65);
+	// root = delete (root, NULL, -1, 75);
+	// root = delete (root, NULL, -1, 85);
 
 	printBTree(root, 0);
 	freeBTree(root);
