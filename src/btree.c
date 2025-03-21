@@ -26,7 +26,6 @@ static BTree *createNode(bool leaf)
 	return node;
 }
 
-// needs fixing
 static BTree *balance(BTree *node, BTree *parent, int passedIndex)
 {
 	int mid = node->keyCount / 2;

@@ -32,19 +32,6 @@ int main()
 		root = insert(root, NULL, nums[i], -1);
 	}
 
-	// root = delete (root, NULL, -1, 160);
-	// root = delete (root, NULL, -1, 25);
-	// root = delete (root, NULL, -1, 100);
-	// root = delete (root, NULL, -1, 125);
-	// root = delete (root, NULL, -1, 150);
-	// root = delete (root, NULL, -1, 190);
-	// root = delete (root, NULL, -1, 140);
-	// root = delete (root, NULL, -1, 190);
-	// root = delete (root, NULL, -1, 100);
-	// root = delete (root, NULL, -1, 50);
-	// root = delete (root, NULL, -1, 150);
-	// root = delete (root, NULL, -1, 1500);
-
 	printBTree(root, 0);
 	freeBTree(root);
 }
