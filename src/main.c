@@ -24,7 +24,7 @@ int main()
 	// INIT VM
 
 	BTree *root = NULL;
-	int nums[] = {50, 30, 70, 10, 40, 60, 80, 5, 15, 35, 45, 55, 65, 75, 85};
+	int nums[] = {100, 50, 150, 25, 75, 125, 175, 10, 30, 60, 90, 110, 140, 160, 190};
 	int len = 15;
 
 	for (int i = 0; i < len; i++)
@@ -32,14 +32,18 @@ int main()
 		root = insert(root, NULL, nums[i], -1);
 	}
 
-	root = delete (root, NULL, -1, 50);
-	// root = delete (root, NULL, -1, 15);
-	// root = delete (root, NULL, -1, 35);
-	// root = delete (root, NULL, -1, 45);
-	// root = delete (root, NULL, -1, 55);
-	// root = delete (root, NULL, -1, 65);
-	// root = delete (root, NULL, -1, 75);
-	// root = delete (root, NULL, -1, 85);
+	// root = delete (root, NULL, -1, 160);
+	// root = delete (root, NULL, -1, 25);
+	// root = delete (root, NULL, -1, 100);
+	// root = delete (root, NULL, -1, 125);
+	// root = delete (root, NULL, -1, 150);
+	// root = delete (root, NULL, -1, 190);
+	// root = delete (root, NULL, -1, 140);
+	// root = delete (root, NULL, -1, 190);
+	// root = delete (root, NULL, -1, 100);
+	// root = delete (root, NULL, -1, 50);
+	// root = delete (root, NULL, -1, 150);
+	// root = delete (root, NULL, -1, 1500);
 
 	printBTree(root, 0);
 	freeBTree(root);

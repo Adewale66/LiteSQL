@@ -1,5 +1,32 @@
 #include "btree.h"
 
+static int binarySearch(int l, int r, int value, BTree *node)
+{
+	while (l < r)
+	{
+		int mid = l + (r - l) / 2;
+		if (node->keys[mid] < value)
+		{
+			l = mid + 1;
+		}
+		else
+		{
+			r = mid;
+		}
+	}
+	return l;
+}
+
+static BTree *createNode(bool leaf)
+{
+	BTree *node = (BTree *)malloc(sizeof(BTree));
+	node->leaf = leaf;
+	node->keyCount = 0;
+	memset(node->children, 0, sizeof(node->children));
+	return node;
+}
+
+// needs fixing
 static BTree *balance(BTree *node, BTree *parent, int passedIndex)
 {
 	int mid = node->keyCount / 2;
@@ -66,92 +93,65 @@ static BTree *balance(BTree *node, BTree *parent, int passedIndex)
 	return current;
 }
 
-static bool canUseMax(BTree *node)
+BTree *insert(BTree *node, BTree *parent, int value, int index)
 {
-	printf("21\n");
-	if (node->leaf)
+	if (node == NULL)
 	{
-		printf("22\n");
-		return node->keyCount > MIN_KEYS;
+		BTree *newNode = createNode(true);
+		newNode->keys[newNode->keyCount++] = value;
+		return newNode;
 	}
-	printf("23\n");
-	return canUseMax(node->children[node->keyCount]);
-}
-
-static int canUseMin(BTree *node)
-{
 	if (node->leaf)
 	{
-		return node->keyCount > MIN_KEYS;
-	}
-	return canUseMin(node->children[0]);
-}
-
-static int getMax(BTree *node, BTree *parent, int passedIdx)
-{
-
-	printf("16\n");
-	if (node->leaf)
-	{
-		printf("17\n");
-		int value = node->keys[node->keyCount - 1];
-		node->keyCount--;
-
-		if (node->keyCount < MIN_KEYS)
+		int l = binarySearch(0, node->keyCount, value, node);
+		if (l >= node->keyCount)
 		{
-			printf("2200\n");
-			node = balance(node, parent, passedIdx);
+			node->keys[l] = value;
 		}
-		return value;
-	}
-	printf("18\n");
-	int value = getMax(node->children[node->keyCount], node, node->keyCount);
-	if (node->keyCount < MIN_KEYS)
-	{
-		printf("180\n");
-		node = balance(node, parent, passedIdx);
-	}
-	return value;
-}
-
-static int getMin(BTree *node)
-{
-	if (node->leaf)
-	{
-		int value;
-		if (node->keyCount > MIN_KEYS)
+		else
 		{
-			value = node->keys[0];
-			for (int i = 0; i < node->keyCount - 1; i++)
+			for (int i = node->keyCount; i > l; i--)
 			{
-				node->keys[i] = node->keys[i + 1];
+				node->keys[i] = node->keys[i - 1];
 			}
-			node->keyCount--;
+			node->keys[l] = value;
 		}
-		else
+		node->keyCount++;
+		if (node->keyCount == MAX_DEGREE)
 		{
-			value = -1;
+
+			node = balance(node, parent, index);
 		}
-		return value;
+		return node;
 	}
-	return getMin(node->children[0]);
+
+	int i = binarySearch(0, node->keyCount, value, node);
+	node->children[i] = insert(node->children[i], node, value, i);
+	if (node->keyCount == MAX_DEGREE)
+	{
+		node = balance(node, parent, index);
+	}
+	return node;
 }
 
-static int binarySearch(int l, int r, int value, BTree *node)
+static BTree *getPredecessor(BTree *node)
 {
-	while (l < r)
+
+	if (node->leaf)
 	{
-		int mid = l + (r - l) / 2;
-		if (node->keys[mid] < value)
-		{
-			l = mid + 1;
-		}
-		else
-		{
-			r = mid;
-		}
+		return node;
 	}
-	return l;
+	return getPredecessor(node->children[node->keyCount]);
+}
+
+static BTree *getSuccessor(BTree *node)
+{
+
+	if (node->leaf)
+	{
+		return node;
+	}
+	return getSuccessor(node->children[0]);
 }
 
 static BTree *balanceNode(BTree *node, BTree *parent, int index)
@@ -161,7 +161,6 @@ static BTree *balanceNode(BTree *node, BTree *parent, int index)
 
 	if (leftSibling >= 0 && parent->children[leftSibling]->keyCount > MIN_KEYS)
 	{
-		printf("camher hrer 6\n");
 
 		BTree *lastChild = parent->children[leftSibling]->children[parent->children[leftSibling]->keyCount];
 		int maxLeft = parent->children[leftSibling]->keys[parent->children[leftSibling]->keyCount - 1];
@@ -181,9 +180,8 @@ static BTree *balanceNode(BTree *node, BTree *parent, int index)
 		}
 		node->children[0] = lastChild;
 	}
-	else if (rightSibling >= MAX_DEGREE && parent->children[rightSibling]->keyCount > MIN_KEYS)
+	else if (rightSibling <= parent->keyCount && parent->children[rightSibling]->keyCount > MIN_KEYS)
 	{
-		printf("camher hrer 7\n");
 
 		int parentValue = parent->keys[index];
 		BTree *firstChild = parent->children[rightSibling]->children[0];
@@ -203,13 +201,11 @@ static BTree *balanceNode(BTree *node, BTree *parent, int index)
 	}
 	else
 	{
-		printf("camher hrer 8\n");
 
 		int parentValue;
 		int parentCount = parent->keyCount;
 		if (leftSibling >= 0)
 		{
-			printf("camher hrer 9\n");
 
 			parentValue = parent->keys[index - 1];
 			parent->children[leftSibling]->keys[parent->children[leftSibling]->keyCount++] = parentValue;
@@ -237,11 +233,10 @@ static BTree *balanceNode(BTree *node, BTree *parent, int index)
 
 				parent->children[i] = parent->children[i + 1];
 			}
-			node = parent->children[index];
+			node = parent->children[index - 1];
 		}
 		else
 		{
-			printf("camher hrer 10\n");
 
 			int oldCount = node->keyCount;
 			parentValue = parent->keys[index];
@@ -274,68 +269,22 @@ static BTree *balanceNode(BTree *node, BTree *parent, int index)
 	return node;
 }
 
-BTree *createNode(bool leaf)
-{
-	BTree *node = (BTree *)malloc(sizeof(BTree));
-	node->leaf = leaf;
-	node->keyCount = 0;
-	memset(node->children, 0, sizeof(node->children));
-	return node;
-}
-
-BTree *insert(BTree *node, BTree *parent, int value, int index)
-{
-	if (node == NULL)
-	{
-		BTree *newNode = createNode(true);
-		newNode->keys[newNode->keyCount++] = value;
-		return newNode;
-	}
-	if (node->leaf)
-	{
-		int l = binarySearch(0, node->keyCount, value, node);
-		if (l >= node->keyCount)
-		{
-			node->keys[l] = value;
-		}
-		else
-		{
-			for (int i = node->keyCount; i > l; i--)
-			{
-				node->keys[i] = node->keys[i - 1];
-			}
-			node->keys[l] = value;
-		}
-		node->keyCount++;
-		if (node->keyCount == MAX_DEGREE)
-		{
-			node = balance(node, parent, index);
-		}
-		return node;
-	}
-
-	int i = binarySearch(0, node->keyCount, value, node);
-	node->children[i] = insert(node->children[i], node, value, i);
-	if (node->keyCount == MAX_DEGREE)
-	{
-		node = balance(node, parent, index);
-	}
-	return node;
-}
-
 BTree *delete(BTree *node, BTree *parent, int index, int value)
 {
+
+	// Value not in tree
+	if (node == NULL)
+	{
+		return NULL;
+	}
 
 	int l = binarySearch(0, node->keyCount, value, node);
 	if (l >= node->keyCount || node->keys[l] != value)
 	{
-		if (value == 160)
-			printf("camher hrer 0\n");
 		node->children[l] = delete (node->children[l], node, l, value);
 		// parent check here
 		if (node->keyCount < MIN_KEYS && parent != NULL)
 		{
-			printf("camher hrer 0111\n");
 			node = balanceNode(node, parent, index);
 		}
 		else
@@ -350,42 +299,12 @@ BTree *delete(BTree *node, BTree *parent, int index, int value)
 		return node;
 	}
 
-	if (parent == NULL)
+	if (node->leaf)
 	{
-		// root node
-		if (node->leaf)
-		{
-
-			for (int i = l; i < node->keyCount - 1; i++)
-			{
-				node->keys[i] = node->keys[i + 1];
-			}
-			node->keyCount--;
-			if (node->keyCount == 0)
-				free(node);
-
-			return node;
-		}
-		if (canUseMax(node->children[l]))
-		{
-			node->keys[l] = getMax(node->children[l], node, l);
-		}
-		else if (canUseMin(node->children[l + 1]))
-		{
-			node->keys[l] = getMin(node->children[l + 1]);
-		}
-		else
-		{
-			node->keys[l] = getMax(node->children[l], node, l);
-		}
-	}
-
-	else if (node->leaf)
-	{
-		printf("camher hrer 1\n");
 		// If leaf contains more than min no of keys or is root
 		if (node->keyCount > MIN_KEYS || parent == NULL)
 		{
+
 			for (int i = l; i < node->keyCount - 1; i++)
 			{
 				node->keys[i] = node->keys[i + 1];
@@ -395,12 +314,13 @@ BTree *delete(BTree *node, BTree *parent, int index, int value)
 		}
 		else
 		{
+
 			// Check siblings if a key can be borrowed
 			int leftIdx = index - 1;
 			int rightIdx = index + 1;
+
 			if (leftIdx >= 0 && parent->children[leftIdx]->keyCount > MIN_KEYS)
 			{
-				printf("camher hrer 2\n");
 				int maxLeft = parent->children[leftIdx]->keys[parent->children[leftIdx]->keyCount - 1];
 				parent->children[leftIdx]->keyCount--;
 				int parentValue = parent->keys[index - 1];
@@ -411,9 +331,8 @@ BTree *delete(BTree *node, BTree *parent, int index, int value)
 				}
 				node->keys[0] = parentValue;
 			}
-			else if (rightIdx <= MAX_DEGREE && parent->children[rightIdx]->keyCount > MIN_KEYS)
+			else if (rightIdx <= parent->keyCount && parent->children[rightIdx]->keyCount > MIN_KEYS)
 			{
-				printf("camher hrer 3\n");
 
 				int minRight = parent->children[rightIdx]->keys[0];
 
@@ -440,7 +359,6 @@ BTree *delete(BTree *node, BTree *parent, int index, int value)
 				int parentCount = parent->keyCount;
 				if (leftIdx >= 0)
 				{
-					printf("camher hrer 4\n");
 					parentValue = parent->keys[index - 1];
 					// merge left node and current node
 
@@ -471,11 +389,10 @@ BTree *delete(BTree *node, BTree *parent, int index, int value)
 					}
 					node = parent->children[index];
 				}
-				else if (rightIdx <= MAX_DEGREE)
+				else if (rightIdx <= parent->keyCount)
 				{
 
 					parentValue = parent->keys[index];
-					printf("camher hrer 5 \n");
 
 					node->keys[node->keyCount++] = parentValue;
 					for (int i = index; i < parent->keyCount - 1; i++)
@@ -484,12 +401,9 @@ BTree *delete(BTree *node, BTree *parent, int index, int value)
 					}
 					parent->keyCount--;
 
-					int idx = 0;
-					for (int i = node->keyCount; idx < parent->children[rightIdx]->keyCount; i++)
+					for (int i = 0; i < parent->children[rightIdx]->keyCount; i++)
 					{
-						node->keys[i] = parent->children[rightIdx]->keys[idx];
-						node->keyCount++;
-						idx++;
+						node->keys[node->keyCount++] = parent->children[rightIdx]->keys[i];
 					}
 
 					int nl = binarySearch(0, node->keyCount, value, node);
@@ -513,42 +427,42 @@ BTree *delete(BTree *node, BTree *parent, int index, int value)
 	{
 		// internal node
 
-		printf("11\n");
-
 		// inorder predecessor
-		if (node->children[index]->keyCount > MIN_KEYS)
+		BTree *predecessor = getPredecessor(node->children[l]);
+		if (predecessor->keyCount > MIN_KEYS)
 		{
-			printf("12\n");
+			node->keys[l] = predecessor->keys[predecessor->keyCount - 1];
+			predecessor->keyCount--;
+			return node;
+		}
 
-			int maxLeft = node->children[index]->keys[node->children[index]->keyCount - 1];
-			node->children[index]->keyCount--;
-			node->keys[index] = maxLeft;
-		}
 		// inorder successor
-		else if (node->children[index + 1]->keyCount > MIN_KEYS)
+		BTree *successor = getSuccessor(node->children[l + 1]);
+		if (successor->keyCount > MIN_KEYS)
 		{
-			printf("13\n");
-			int minRight = node->children[index + 1]->keys[0];
-			for (int i = 0; i < node->children[index + 1]->keyCount - 1; i++)
+			node->keys[l] = successor->keys[0];
+			for (int i = 0; i < successor->keyCount - 1; i++)
 			{
-				node->children[index + 1]->keys[i] = node->children[index + 1]->keys[i + 1];
+				successor->keys[i] = successor->keys[i + 1];
 			}
-			node->children[index + 1]->keyCount--;
-			node->keys[index] = minRight;
+			successor->keyCount--;
 		}
+
 		else
 		{
-			printf("14\n");
-			int length = node->keyCount;
-			for (int i = 0; i < node->children[index + 1]->keyCount; i++)
+
+			node->keys[l] = predecessor->keys[predecessor->keyCount - 1];
+			node->children[l] = delete (node->children[l], node, l, node->keys[l]);
+
+			if (node->keyCount == 0 && parent == NULL) // root
 			{
-				node->children[index]->keys[node->children[index]->keyCount++] = node->children[index + 1]->keys[i];
+				BTree *root = node->children[l];
+				free(node);
+				return root;
 			}
-			node->keyCount--;
-			free(node->children[index + 1]);
-			for (int i = index + 1; i < length; i++)
+			if (node->keyCount < MIN_KEYS && parent != NULL)
 			{
-				node->children[i] = node->children[i + 1];
+				node = balanceNode(node, parent, index);
 			}
 		}
 	}
