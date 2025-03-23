@@ -64,12 +64,12 @@ typedef struct
 	char *source;
 	int start;
 	int current;
-	uint8_t source_length;
+	size_t source_length;
 	TokenList tokenList;
 
 } Scanner;
 
-bool initScanner(char *source);
+bool initScanner(char *source, size_t length);
 TokenList scanTokens();
 void freeTokens();
 void printToken(Token token);

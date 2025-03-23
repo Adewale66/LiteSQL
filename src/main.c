@@ -1,37 +1,32 @@
-#include "lexer.h"
-#include "parser.h"
-#include "chunk.h"
-#include <fcntl.h>
-#include <unistd.h>
-#include "btree.h"
+#include "processor.h"
 
-int main()
+int main(int argc, char *argv[])
 {
-	// int fd;
-	// if (argc != 2)
-	// {
-	// 	fprintf(stderr, "Usage: db <filename>\n");
-	// 	exit(EXIT_FAILURE);
-	// }
-	// fd = open(argv[1], O_CREAT | O_RDWR, 0644);
-	// if (fd == -1)
-	// {
-	// 	fprintf(stderr, "Unable to create or read file\n");
-	// 	exit(EXIT_FAILURE);
-	// }
-	// CREATE OR GET MASTER TABLE
-	// LOAD MASTER TABLE INTO MEMORY
-	// INIT VM
-
-	BTree *root = NULL;
-	int nums[] = {100, 50, 150, 25, 75, 125, 175, 10, 30, 60, 90, 110, 140, 160, 190};
-	int len = 15;
-
-	for (int i = 0; i < len; i++)
+	if (argc != 2)
 	{
-		root = insert(root, NULL, nums[i], -1);
+		fprintf(stderr, "Usage: db <filename>\n");
+		fprintf(stderr, "Usage: db <filename>%s", argv[1]);
+		exit(EXIT_FAILURE);
 	}
+	run();
+	// FILE *file;
 
-	printBTree(root, 0);
-	freeBTree(root);
+	// file = fopen(argv[1], "rb");
+	// if (file == NULL)
+	// {
+	// 	addMasterPage(argv[1]);
+	// }
+
+	// void *page = allocatePage();
+	// size_t bytes_read = fread(page, PAGE_SIZE, 1, file);
+	// if (bytes_read < 1)
+	// {
+	// 	fprintf(stderr, "Could not find page");
+	// 	exit(EXIT_FAILURE);
+	// }
+	// PageHeader *pageHeader = (PageHeader *)((uint8_t *)page + sizeof(DatabaseHeader));
+	// fclose(file);
+	// free(page);
+
+	return 0;
 }

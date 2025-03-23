@@ -63,7 +63,7 @@ static TokenType findKeyword(char *text)
 	return TOKEN_NULL;
 }
 
-bool initScanner(char *source)
+bool initScanner(char *source, size_t length)
 {
 
 	if (source == NULL)
@@ -75,7 +75,7 @@ bool initScanner(char *source)
 
 	scanner.source = source;
 	scanner.start = 0;
-	scanner.source_length = strlen(source);
+	scanner.source_length = length;
 	scanner.current = 0;
 
 	TokenList tokens;

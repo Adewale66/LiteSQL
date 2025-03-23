@@ -1,5 +1,8 @@
 - [x] Scan source to Tokens
 - [x] error handling
-- [] create ast
+- [] ~~create~~ rewrite ast
 - [] bytecode generator
 - [] btrees
+- [] hints
+- [] processor
+- [] pages
