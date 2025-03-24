@@ -27,6 +27,10 @@ typedef enum
 	TOKEN_WHERE,  // WHERE
 	TOKEN_VALUES, // VALUES
 	TOKEN_INTO,	  // INTO
+	TOKEN_CREATE, // CREATE
+	TOKEN_TABLE,  // CREATE
+	TOKEN_INT,	  // INT
+	TOKEN_STRING, // STRING
 
 	// Operators
 	TOKEN_EQUALS,	  // =
@@ -35,7 +39,6 @@ typedef enum
 	TOKEN_GT_EQUALS,  // >=
 	TOKEN_LT,		  // <
 	TOKEN_LT_EQUALS,  // <=
-	TOKEN_BANG,		  // !
 
 	// Literals
 	TOKEN_IDENTIFIER, // Column/Table names
@@ -63,15 +66,12 @@ typedef struct
 {
 	char *source;
 	int start;
-	int current;
+	size_t current;
 	size_t source_length;
-	TokenList tokenList;
 
 } Scanner;
 
-bool initScanner(char *source, size_t length);
-TokenList scanTokens();
-void freeTokens();
-void printToken(Token token);
-void printTokens();
+void initScanner(Scanner *scanner, char *source, size_t length);
+void scanToken(Scanner *scanner, Token *token);
+void printToken(Token *token);
 #endif

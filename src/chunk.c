@@ -25,12 +25,3 @@ void freeChunk(Chunk *chunk)
 	FREE_ARRAY(chunk->code);
 	initChunk(chunk);
 }
-
-Chunk *generateByteCode(ASTNode *node)
-{
-	Chunk *chunk = ALLOCATE_MEMORY_WITH_ARGS(Chunk, sizeof(Chunk), freeNode, node);
-	initChunk(chunk);
-
-	freeNode(node);
-	return chunk;
-}

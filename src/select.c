@@ -4,181 +4,193 @@
 static struct
 {
 	TokenType type;
-	char *literal;
+	BinaryOperator op;
 } operators[] = {
-	{TOKEN_EQUALS, "="},
-	{TOKEN_GT, ">"},
-	{TOKEN_GT_EQUALS, ">="},
-	{TOKEN_LT, "<"},
-	{TOKEN_LT_EQUALS, "<="},
-	{TOKEN_NOT_EQUALS, "!="}};
+	{TOKEN_EQUALS, EQUALS},
+	{TOKEN_GT, GREATER_THAN},
+	{TOKEN_GT_EQUALS, GREATER_THAN_OR_EQUALS},
+	{TOKEN_LT, LESS_THAN},
+	{TOKEN_LT_EQUALS, LESS_THAN_OR_EQUALS},
+	{TOKEN_NOT_EQUALS, NOT_EQUALS}};
 
 static int opCount = 6;
 
-static ASTNode *createNode(NodeType type, ASTNode *parent)
+static Expression *createExpr(ExpressionType type)
 {
-	ASTNode *node = ALLOCATE_MEMORY_WITH_ARGS(ASTNode, sizeof(ASTNode), freeNode, parent);
-	node->type = type;
-	node->childCount = 0;
-	node->children = NULL;
-	node->value.stringValue = NULL;
-	node->comparisonOperator = NULL;
-	node->left = NULL;
-	node->right = NULL;
-
-	return node;
+	Expression *expr = ALLOCATE_MEMORY(Expression, sizeof(Expression));
+	expr->type = type;
+	return expr;
 }
 
-static void addChild(ASTNode *parent, ASTNode *child)
-{
-	parent->childCount++;
-	parent->children = GROW_ARRAY(ASTNode *, parent->children, parent->childCount * sizeof(ASTNode *));
-	parent->children[parent->childCount - 1] = child;
-}
-
-static char *getOp(TokenType type)
+static BinaryOperator getOp(TokenType type)
 {
 	for (int i = 0; i < opCount; i++)
 	{
 		if (operators[i].type == type)
-			return operators[i].literal;
+			return operators[i].op;
 	}
-	return NULL;
+	return BAD_OP;
 }
-static bool parseWhere(ASTNode *parent)
+static void parseWhere(SelectStmt *select, Scanner *scanner, Token *token)
 {
 
-	ASTNode *condition = createNode(WHERE, parent);
-	ASTNode *comparison = createNode(COMPARISON, parent);
+	scanToken(scanner, token);
+	Expression *expression = createExpr(BINARY);
 
-	addChild(condition, comparison);
-	addChild(parent, condition);
-
-	ASTNode *left = NULL;
-	if (peek().type == TOKEN_NUMBER)
+	if (token->type == TOKEN_NUMBER)
 	{
-		left = createNode(NUMBER, parent);
-		left->value.intValue = *((int *)peek().literal);
+		Expression *left = createExpr(IDENTIFIER);
+		left->expr.identifier.intValue = *((int *)token->literal);
+		expression->expr.binary.left = left;
 	}
-	else if (peek().type == TOKEN_IDENTIFIER)
+	else if (token->type == TOKEN_IDENTIFIER)
 	{
-		left = createNode(ID, parent);
-		left->value.stringValue = COPY_STRING((char *)peek().literal, freeNode, parent);
+		Expression *left = createExpr(IDENTIFIER);
+		strncpy(left->expr.identifier.stringValue, (char *)token->literal, strlen((char *)token->literal));
+		expression->expr.binary.left = left;
 	}
 	else
 	{
 		fprintf(stderr, "Error: Unexpected identifier\n");
-		freeNode(parent);
-		return false;
+		// handle this
+		return;
 	}
 
-	comparison->left = left;
+	scanToken(scanner, token);
+	BinaryOperator op = getOp(token->type);
 
-	advance();
-	Token op = peek();
-
-	char *operator= getOp(op.type);
-	if (operator== NULL)
+	if (op == BAD_OP)
 	{
-		fprintf(stderr, "Error: Expected 'operator'.\n");
-		freeNode(parent);
-		return false;
+		// handle this
+		return;
 	}
-	comparison->comparisonOperator = operator;
+	expression->expr.binary.operator= op;
+	scanToken(scanner, token);
 
-	advance();
-
-	ASTNode *right = NULL;
-	if (peek().type == TOKEN_NUMBER)
+	if (token->type == TOKEN_NUMBER)
 	{
-		right = createNode(NUMBER, parent);
-		right->value.intValue = *((int *)peek().literal);
+		Expression *right = createExpr(IDENTIFIER);
+		right->expr.identifier.intValue = *((int *)token->literal);
+		expression->expr.binary.right = right;
 	}
-	else if (peek().type == TOKEN_IDENTIFIER)
+	else if (token->type == TOKEN_IDENTIFIER)
 	{
-		right = createNode(ID, parent);
-		right->value.stringValue = COPY_STRING((char *)peek().literal, freeNode, parent);
+		Expression *right = createExpr(IDENTIFIER);
+		strncpy(right->expr.identifier.stringValue, (char *)token->literal, strlen((char *)token->literal));
+		expression->expr.binary.right = right;
 	}
 	else
 	{
-		fprintf(stderr, "Error: Unexpecteda identifier\n");
-		freeNode(parent);
-		return false;
+		fprintf(stderr, "Error: Unexpected identifier\n");
+		// handle this
+		return;
 	}
-	comparison->right = right;
-
-	advance();
-	return true;
+	select->where = expression;
 }
 
-static ASTNode *checkClause(ASTNode *parent)
+static void checkClause(SelectStmt *select, Scanner *scanner, Token *token)
 {
-	bool success = false;
-	if (match(1, TOKEN_WHERE))
-		success = parseWhere(parent);
+	scanToken(scanner, token);
 
-	if (success)
+	if (token->type == TOKEN_WHERE)
 	{
-		if (!consume(TOKEN_SEMICOLON, "Expected ';' after query."))
+		parseWhere(select, scanner, token);
+	}
+	if (token->type != TOKEN_SEMICOLON)
+	{
+		// handle this
+		return;
+	}
+}
+
+static void parseTable(SelectStmt *select, Scanner *scanner, Token *token)
+{
+
+	if (token->type != TOKEN_FROM)
+	{
+
+		// handle this
+		return;
+	}
+	scanToken(scanner, token);
+	if (token->type != TOKEN_IDENTIFIER)
+	{
+		// handle this
+		return;
+	}
+	select->from = COPY_STRING(token->literal);
+
+	checkClause(select, scanner, token);
+}
+
+static void parseColumns(SelectStmt *select, Scanner *scanner, Token *token)
+{
+	scanToken(scanner, token);
+	bool comma = false;
+
+	while (token->type == TOKEN_IDENTIFIER)
+	{
+		comma = false;
+		Expression column;
+		if (select->column_capacity < select->column_count + 1)
 		{
-			freeNode(parent);
-			return NULL;
+			uint8_t oldCapacity = select->column_capacity;
+			select->column_capacity = GROW_CAPACITY(oldCapacity);
+			select->columns = GROW_ARRAY(Expression, select->columns, select->column_capacity);
 		}
-		return parent;
-	}
-	return NULL;
-}
+		column.type = IDENTIFIER;
+		column.expr.identifier.type = VALUE_STRING;
+		strncpy(column.expr.identifier.stringValue, (char *)token->literal, strlen((char *)token->literal));
 
-static ASTNode *parseTable(ASTNode *parent)
-{
+		select->columns[select->column_count++] = column;
 
-	Token current = advance();
-	if (current.type != TOKEN_IDENTIFIER)
-	{
-		fprintf(stderr, "Error: Expected table name.\n");
-		freeNode(parent);
-		return NULL;
-	}
-	ASTNode *table = createNode(TABLE, parent);
-
-	addChild(parent, table);
-
-	table->value.stringValue = COPY_STRING((char *)current.literal, freeNode, parent);
-
-	return checkClause(parent);
-}
-
-static ASTNode *parseColumns(ASTNode *parent)
-{
-	while (match(1, TOKEN_IDENTIFIER))
-	{
-		ASTNode *columnNode = createNode(COLUMN, parent);
-		addChild(parent, columnNode);
-		columnNode->value.stringValue = COPY_STRING((char *)previous().literal, freeNode, parent);
-
-		if (match(1, TOKEN_COMMA))
+		scanToken(scanner, token);
+		if (token->type == TOKEN_COMMA)
 		{
-			if (peek().type != TOKEN_IDENTIFIER)
-			{
-				fprintf(stderr, "Error: Expected identifier after ','.\n");
-				freeNode(parent);
-				return NULL;
-			}
+			comma = true;
+			scanToken(scanner, token);
 		}
 		else
+		{
 			break;
+		}
 	}
 
-	if (!consume(TOKEN_FROM, "Expected \"FROM\" after table name."))
+	if (select->column_count == 0 || comma)
 	{
-		freeNode(parent);
-		return NULL;
-	};
-	return parseTable(parent);
+		// handle this
+		return;
+	}
+
+	parseTable(select, scanner, token);
 }
 
-ASTNode *selectStatement()
+void selectStatement(SelectStmt *select, Scanner *scanner, Token *token)
 {
-	ASTNode *selectNode = createNode(SELECT, NULL);
-	return parseColumns(selectNode);
+	parseColumns(select, scanner, token);
+}
+
+void freeSelect(SelectStmt *select)
+{
+
+	if (select->column_count > 0)
+	{
+		free(select->columns);
+	}
+
+	if (select->from != NULL)
+		free(select->from);
+}
+
+void printSelect(SelectStmt *select)
+{
+	printf("SELECT\n");
+	printf("  ");
+
+	for (int i = 0; i < select->column_count; i++)
+	{
+		printf("COLUMN: %s\n", select->columns[i].expr.identifier.stringValue);
+	}
+
+	printf("TABLE: %s\n", select->from);
 }

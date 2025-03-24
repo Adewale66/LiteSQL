@@ -8,6 +8,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Usage: db <filename>%s", argv[1]);
 		exit(EXIT_FAILURE);
 	}
+
 	run();
 	// FILE *file;
 

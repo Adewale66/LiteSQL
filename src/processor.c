@@ -41,6 +41,8 @@ int run()
 {
 
 	InputBuffer *input = createBuffer();
+	Scanner scanner;
+	Statement statement;
 
 	printf("LiteSQL version 1.0\nEnter \".help\" for usage hints\n");
 	while (true)
@@ -52,11 +54,11 @@ int run()
 		}
 		else
 		{
-			if (!initScanner(input->buffer, input->input_length))
-			{
-				fprintf(stderr, "Error parsing command\n");
-			}
-			TokenList tokens = scanTokens();
+			initScanner(&scanner, input->buffer, input->input_length);
+			initParser(&statement, &scanner);
+			printSelect(&(statement.select));
+			freeSelect(&(statement.select));
 		}
 	}
+	freeBuffer(input);
 }

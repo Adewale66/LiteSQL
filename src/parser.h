@@ -4,21 +4,21 @@
 #include <stdarg.h>
 #include "lexer.h"
 
-typedef enum NodeType NodeType;
 typedef enum ValueType ValueType;
-typedef struct ASTNode ASTNode;
-typedef struct Value Value;
+typedef enum BinaryOperator BinaryOperator;
 
-enum NodeType
-{
-	SELECT,
-	TABLE,
-	COLUMN,
-	WHERE,
-	COMPARISON,
-	ID,
-	NUMBER,
-};
+typedef enum StatementType StatementType;
+typedef struct Statement Statement;
+typedef struct SelectStmt SelectStmt;
+typedef struct InsertStmt InsertStmt;
+typedef struct CreateStmt CreateStmt;
+typedef struct DeleteStmt DeleteStmt;
+typedef struct UpdateStmt UpdateStmt;
+
+typedef enum ExpressionType ExpressionType;
+typedef struct Expression Expression;
+typedef struct BinaryExpression BinaryExpression;
+typedef struct IdentifierExpression IdentifierExpression;
 
 enum ValueType
 {
@@ -26,48 +26,102 @@ enum ValueType
 	VALUE_STRING
 };
 
-struct Value
+enum StatementType
+{
+	SELECT,
+	CREATE,
+	UPDATE,
+	DELETE,
+	INSERT,
+	NULL_STMT
+};
+enum BinaryOperator
+{
+	GREATER_THAN,
+	GREATER_THAN_OR_EQUALS,
+	LESS_THAN,
+	LESS_THAN_OR_EQUALS,
+	NOT_EQUALS,
+	EQUALS,
+	BAD_OP
+};
+
+enum ExpressionType
+{
+	BINARY,
+	IDENTIFIER
+};
+
+struct SelectStmt
+{
+
+	Expression *columns;
+	uint8_t column_count;
+	uint8_t column_capacity;
+	char *from;
+	Expression *where;
+	// ...
+};
+
+struct InsertStmt
+{
+};
+
+struct CreateStmt
+{
+};
+
+struct DeleteStmt
+{
+};
+
+struct UpdateStmt
+{
+};
+
+struct Statement
+{
+	StatementType type;
+	union
+	{
+		SelectStmt select;
+		DeleteStmt delete;
+		CreateStmt create;
+		InsertStmt insert;
+		UpdateStmt update;
+	};
+};
+
+struct BinaryExpression
+{
+	Expression *left;
+	Expression *right;
+	BinaryOperator operator;
+};
+
+struct IdentifierExpression
 {
 	ValueType type;
 	union
 	{
-		char *stringValue;
+		char stringValue[255];
 		int intValue;
 	};
 };
-
-struct ASTNode
+struct Expression
 {
-	NodeType type;
-	Value value;
-	char *comparisonOperator;
-	ASTNode *left;
-	ASTNode *right;
-	ASTNode **children;
-	int childCount;
+	ExpressionType type;
+	union
+	{
+		BinaryExpression binary;
+		IdentifierExpression identifier;
+	} expr;
 };
 
-typedef struct
-{
-	TokenList tokenlist;
-	ASTNode *root;
-	int current;
+void initParser(Statement *statement, Scanner *scanner);
+void selectStatement(SelectStmt *stmt, Scanner *scanner, Token *token);
 
-} Parser;
+void freeSelect(SelectStmt *select);
+void printSelect(SelectStmt *select);
 
-ASTNode *initParser(TokenList tokens);
-void freeNode(ASTNode *node);
-void printAST(ASTNode *node, int indent);
-
-// Helper functions
-
-Token previous();
-Token peek();
-bool consume(TokenType type, char *errorMessage);
-bool isAtEnd();
-Token advance();
-bool match(int n, ...);
-bool check(TokenType type);
-
-ASTNode *selectStatement();
 #endif

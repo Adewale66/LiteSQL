@@ -12,7 +12,7 @@ void *reallocate(void *pointer, size_t newSize)
 	if (!result)
 	{
 		fprintf(stderr, "Memory reallocation failed!\n");
-		return NULL;
+		exit(EXIT_FAILURE);
 	}
 	return result;
 }
@@ -23,8 +23,19 @@ void *allocate(int size)
 	if (result == NULL)
 	{
 		fprintf(stderr, "Memory reallocation failed!\n");
-		return NULL;
+		exit(EXIT_FAILURE);
 	}
 
 	return result;
+}
+
+char *copy(char *string)
+{
+	char *ptr = strdup(string);
+	if (ptr == NULL)
+	{
+		fprintf(stderr, "Memory reallocation failed!\n");
+		exit(EXIT_FAILURE);
+	}
+	return ptr;
 }

@@ -1,8 +1,5 @@
 #include "lexer.h"
 
-static Scanner scanner;
-static bool hadError;
-
 static struct
 {
 	char *keyword;
@@ -13,42 +10,34 @@ static struct
 	{"from", TOKEN_FROM},
 	{"where", TOKEN_WHERE},
 	{"values", TOKEN_VALUES},
-	{"into", TOKEN_INTO}};
-static int keywordCount = 6;
+	{"into", TOKEN_INTO},
+	{"create", TOKEN_CREATE},
+	{"table", TOKEN_TABLE},
+	{"string", TOKEN_STRING},
+	{"int", TOKEN_INT},
+};
+static int keywordCount = 10;
 
-void freeTokens()
+static bool isAtEnd(Scanner *scanner)
 {
-	for (int i = 0; i < scanner.tokenList.size; i++)
-	{
-		if (scanner.tokenList.tokens[i].literal != NULL)
-			free(scanner.tokenList.tokens[i].literal);
-	}
-	if (scanner.tokenList.tokens != NULL)
-		free(scanner.tokenList.tokens);
-	scanner.tokenList.size = 0;
-	scanner.tokenList.tokens = NULL;
-}
-
-static bool isAtEnd()
-{
-	return scanner.current >= scanner.source_length;
+	return scanner->current >= scanner->source_length;
 }
 
 static char *substring(char *source, int start, int length)
 {
-	char *sub = ALLOCATE_MEMORY(char, length + 1, freeTokens);
+	char *sub = ALLOCATE_MEMORY(char, length + 1);
 	memcpy(sub, source + start, length);
 	sub[length] = '\0';
 	return sub;
 }
 
-static bool match(char expected)
+static bool match(char expected, Scanner *scanner)
 {
-	if (isAtEnd())
+	if (isAtEnd(scanner))
 		return false;
-	if (scanner.source[scanner.current] != expected)
+	if (scanner->source[scanner->current] != expected)
 		return false;
-	scanner.current++;
+	scanner->current++;
 	return true;
 }
 
@@ -63,178 +52,149 @@ static TokenType findKeyword(char *text)
 	return TOKEN_NULL;
 }
 
-bool initScanner(char *source, size_t length)
+void initScanner(Scanner *scanner, char *source, size_t length)
 {
-
-	if (source == NULL)
-	{
-		fprintf(stderr, "Error: Source can not be null\n");
-		return false;
-	}
-	hadError = false;
-
-	scanner.source = source;
-	scanner.start = 0;
-	scanner.source_length = length;
-	scanner.current = 0;
-
-	TokenList tokens;
-	tokens.capacity = 0;
-	tokens.size = 0;
-	tokens.tokens = NULL;
-
-	scanner.tokenList = tokens;
-	return true;
+	scanner->source = source;
+	scanner->start = 0;
+	scanner->source_length = length;
+	scanner->current = 0;
 }
 
-static void addToArray(TokenList *list, Token token)
+static void addToken(TokenType type, Token *token, Scanner *scanner)
 {
-	if (list->capacity < list->size + 1)
-	{
-		int oldCapacity = list->capacity;
-		list->capacity = GROW_CAPACITY(oldCapacity);
-		list->tokens = GROW_ARRAY(Token, list->tokens, list->capacity);
-	}
-
-	list->tokens[list->size] = token;
-	list->size++;
+	char *text = substring(scanner->source, scanner->start, scanner->current - scanner->start);
+	token->type = type;
+	token->literal = text;
 }
 
-static void addToken(TokenType type)
+static char advance(Scanner *scanner)
 {
-	char *text = substring(scanner.source, scanner.start, scanner.current - scanner.start);
-	Token token;
-	token.type = type;
-	token.literal = text;
-	addToArray(&scanner.tokenList, token);
+	return scanner->source[scanner->current++];
 }
 
-static char advance()
+static char peek(Scanner *scanner)
 {
-	return scanner.source[scanner.current++];
-}
-
-static char peek()
-{
-	if (isAtEnd())
+	if (isAtEnd(scanner))
 		return '\0';
-	return scanner.source[scanner.current];
+	return scanner->source[scanner->current];
 }
 
-static void number()
+static void number(Scanner *scanner, Token *token)
 {
-	while (isdigit(peek()))
-		advance();
-	Token token;
-	token.type = TOKEN_NUMBER;
-	token.literal = ALLOCATE_MEMORY(int, sizeof(int), freeTokens);
+	while (isdigit(peek(scanner)))
+		advance(scanner);
+	token->type = TOKEN_NUMBER;
+	token->literal = ALLOCATE_MEMORY(int, sizeof(int));
 
-	char *text = substring(scanner.source, scanner.start, scanner.current - scanner.start);
+	char *text = substring(scanner->source, scanner->start, scanner->current - scanner->start);
 	int number = atoi(text);
 
-	*(int *)token.literal = number;
-	addToArray(&scanner.tokenList, token);
+	*(int *)(token->literal) = number;
 	free(text);
 }
 
-static void identifier()
+static void identifier(Token *token, Scanner *scanner)
 {
-	while (isalnum(peek()))
-		advance();
-	char *text = substring(scanner.source, scanner.start, scanner.current - scanner.start);
+	while (isalnum(peek(scanner)))
+		advance(scanner);
+	char *text = substring(scanner->source, scanner->start, scanner->current - scanner->start);
 	TokenType type = findKeyword(text);
 	if (type == TOKEN_NULL)
 		type = TOKEN_IDENTIFIER;
-	free(text);
-	addToken(type);
+	token->type = type;
+	token->literal = text;
 }
 
-static void string(char end)
+static void addNullToken(Token *token)
 {
-	while (peek() != end && !isAtEnd())
+	token->type = TOKEN_NULL;
+}
+
+static void string(char end, Token *token, Scanner *scanner)
+{
+	while (peek(scanner) != end && !isAtEnd(scanner))
 	{
-		advance();
+		advance(scanner);
 	}
-	if (isAtEnd())
+	if (isAtEnd(scanner))
 	{
+		addNullToken(token);
 		fprintf(stderr, "Error: Unterminated string\n");
-		hadError = true;
 		return;
 	}
-	advance();
-	Token token;
-	token.type = TOKEN_IDENTIFIER;
-	char *text = substring(scanner.source, scanner.start + 1, scanner.current - scanner.start - 2);
-	token.literal = text;
-	addToArray(&scanner.tokenList, token);
+	advance(scanner);
+	token->type = TOKEN_IDENTIFIER;
+	char *text = substring(scanner->source, scanner->start + 1, scanner->current - scanner->start - 2);
+	token->literal = text;
 }
 
-static void scanToken()
+void scanToken(Scanner *scanner, Token *token)
 {
-	char c = advance();
+	char c = advance(scanner);
+
+	while (c == '\n' || c == '\r' || c == ' ' || c == '\t')
+	{
+		c = advance(scanner);
+	}
+	scanner->start = scanner->current - 1;
+
 	switch (c)
 	{
 	case ';':
-		addToken(TOKEN_SEMICOLON);
+		addToken(TOKEN_SEMICOLON, token, scanner);
 		break;
 	case ',':
-		addToken(TOKEN_COMMA);
+		addToken(TOKEN_COMMA, token, scanner);
 		break;
 	case '*':
-		addToken(TOKEN_STAR);
+		addToken(TOKEN_STAR, token, scanner);
 		break;
 	case '(':
-		addToken(TOKEN_LPAREN);
+		addToken(TOKEN_LPAREN, token, scanner);
 		break;
 	case ')':
-		addToken(TOKEN_RPAREN);
-		break;
-	case ' ':
-	case '\r':
-	case '\t':
-	case '\n':
-		// Ignore whitespace.
+		addToken(TOKEN_RPAREN, token, scanner);
 		break;
 	case '!':
-		if (match('='))
-			addToken(TOKEN_NOT_EQUALS);
+		if (match('=', scanner))
+			addToken(TOKEN_NOT_EQUALS, token, scanner);
 		else
 		{
-			hadError = true;
 			fprintf(stderr, "Error: Invalid symbol\n");
+			addNullToken(token);
 		}
 		break;
 	case '>':
-		addToken(match('=') ? TOKEN_GT_EQUALS : TOKEN_GT);
+		addToken(match('=', scanner) ? TOKEN_GT_EQUALS : TOKEN_GT, token, scanner);
 		break;
 	case '<':
-		addToken(match('=') ? TOKEN_LT_EQUALS : TOKEN_LT);
+		addToken(match('=', scanner) ? TOKEN_LT_EQUALS : TOKEN_LT, token, scanner);
 		break;
 	case '=':
-		if (peek() == '=')
+		if (peek(scanner) == '=')
 		{
 			fprintf(stderr, "Error: Invalid symbol\n");
-			hadError = true;
+			addNullToken(token);
 		}
 		else
 		{
-			addToken(TOKEN_EQUALS);
+			addToken(TOKEN_EQUALS, token, scanner);
 		}
 		break;
 	case '"':
-		string('"');
+		string('"', token, scanner);
 		break;
 	case '\'':
-		string('\'');
+		string('\'', token, scanner);
 		break;
 	default:
 		if (isdigit(c))
 		{
-			number();
+			number(scanner, token);
 		}
 		else if (isalpha(c))
 		{
-			identifier();
+			identifier(token, scanner);
 		}
 		else
 		{
@@ -242,35 +202,16 @@ static void scanToken()
 			char message[25];
 			sprintf(message, format, c);
 			fprintf(stderr, "Error: %s\n", message);
-			hadError = true;
+			addNullToken(token);
 		}
 		break;
 	}
 }
 
-TokenList scanTokens()
-{
-	while (!isAtEnd() && !hadError)
-	{
-		scanner.start = scanner.current;
-		scanToken();
-	}
-	if (hadError)
-	{
-		freeTokens();
-		return scanner.tokenList;
-	}
-	Token token;
-	token.type = TOKEN_EOF;
-	token.literal = NULL;
-	addToArray(&scanner.tokenList, token);
-	return scanner.tokenList;
-}
-
-void printToken(Token token)
+void printToken(Token *token)
 {
 
-	switch (token.type)
+	switch (token->type)
 	{
 	case TOKEN_COMMA:
 		printf("COMMA");
@@ -282,7 +223,7 @@ void printToken(Token token)
 		printf("SELECT");
 		break;
 	case TOKEN_IDENTIFIER:
-		printf("IDENTIFER: %s", (char *)token.literal);
+		printf("IDENTIFER: %s", (char *)token->literal);
 		break;
 	case TOKEN_SEMICOLON:
 		printf("SEMICOLON");
@@ -297,7 +238,7 @@ void printToken(Token token)
 		printf("EOF");
 		break;
 	case TOKEN_NUMBER:
-		printf("NUMBER: %d", *((int *)token.literal));
+		printf("NUMBER: %d", *((int *)token->literal));
 		break;
 	case TOKEN_LPAREN:
 		printf("LEFT_PARENT");
@@ -312,20 +253,8 @@ void printToken(Token token)
 		printf("INTO");
 		break;
 	default:
-		printf("Token not recognized %s", (char *)token.literal);
+		printf("Token not recognized %s", (char *)token->literal);
 		break;
-	}
-}
-
-void printTokens()
-{
-	TokenList list = scanner.tokenList;
-	printf("%d\n", list.size);
-	for (int i = 0; i < list.size; i++)
-	{
-		printToken(list.tokens[i]);
-		if (i != list.size - 1)
-			printf(", ");
 	}
 	printf("\n");
 }
