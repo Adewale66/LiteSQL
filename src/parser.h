@@ -4,9 +4,6 @@
 #include <stdarg.h>
 #include "lexer.h"
 
-typedef enum ValueType ValueType;
-typedef enum BinaryOperator BinaryOperator;
-
 typedef enum StatementType StatementType;
 typedef struct Statement Statement;
 typedef struct SelectStmt SelectStmt;
@@ -15,16 +12,13 @@ typedef struct CreateStmt CreateStmt;
 typedef struct DeleteStmt DeleteStmt;
 typedef struct UpdateStmt UpdateStmt;
 
-typedef enum ExpressionType ExpressionType;
-typedef struct Expression Expression;
 typedef struct BinaryExpression BinaryExpression;
 typedef struct IdentifierExpression IdentifierExpression;
+typedef struct ColumnExpression ColumnExpression;
 
-enum ValueType
-{
-	VALUE_INT,
-	VALUE_STRING
-};
+// Column types
+#define INT 0x01
+#define STRING 0x02
 
 enum StatementType
 {
@@ -35,31 +29,15 @@ enum StatementType
 	INSERT,
 	NULL_STMT
 };
-enum BinaryOperator
-{
-	GREATER_THAN,
-	GREATER_THAN_OR_EQUALS,
-	LESS_THAN,
-	LESS_THAN_OR_EQUALS,
-	NOT_EQUALS,
-	EQUALS,
-	BAD_OP
-};
-
-enum ExpressionType
-{
-	BINARY,
-	IDENTIFIER
-};
 
 struct SelectStmt
 {
 
-	Expression *columns;
+	IdentifierExpression *columns;
 	uint8_t column_count;
 	uint8_t column_capacity;
 	char *from;
-	Expression *where;
+	IdentifierExpression *where;
 	// ...
 };
 
@@ -70,6 +48,9 @@ struct InsertStmt
 struct CreateStmt
 {
 	char *table_name;
+	ColumnExpression *columns;
+	uint8_t column_count;
+	uint8_t column_capacity;
 };
 
 struct DeleteStmt
@@ -93,30 +74,20 @@ struct Statement
 	};
 };
 
-struct BinaryExpression
-{
-	Expression *left;
-	Expression *right;
-	BinaryOperator operator;
-};
-
 struct IdentifierExpression
 {
-	ValueType type;
+	uint8_t type;
 	union
 	{
 		char stringValue[255];
 		int intValue;
 	};
 };
-struct Expression
+
+struct ColumnExpression
 {
-	ExpressionType type;
-	union
-	{
-		BinaryExpression binary;
-		IdentifierExpression identifier;
-	} expr;
+	char column_name[255];
+	uint8_t type;
 };
 
 void initParser(Statement *statement, Scanner *scanner);
@@ -126,4 +97,6 @@ void freeSelect(SelectStmt *select);
 void printSelect(SelectStmt *select);
 
 CreateStmt *createStatement(Scanner *scanner, Token *token);
+void freeCreate(CreateStmt *create);
+void printCreate(CreateStmt *create);
 #endif

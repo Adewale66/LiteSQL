@@ -13,12 +13,22 @@ void initParser(Statement *stmt, Scanner *scanner)
 		stmt->type = SELECT;
 		stmt->select = NULL;
 		stmt->select = selectStatement(scanner, &token);
+		if (stmt->select == NULL)
+		{
+			stmt->type = NULL_STMT;
+		}
 		break;
 	case TOKEN_CREATE:
 		stmt->type = CREATE;
 		stmt->create = NULL;
 		stmt->create = createStatement(scanner, &token);
+		if (stmt->create == NULL)
+		{
+			stmt->type = NULL_STMT;
+		}
+		break;
 	default:
+		stmt->type = NULL_STMT;
 		break;
 	}
 	if (token.type != TOKEN_NUMBER && token.type != TOKEN_NULL)

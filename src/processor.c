@@ -44,6 +44,43 @@ static void read_input(InputBuffer *input)
 	input->buffer[bytes_read - 1] = '\0';
 }
 
+static void print_help()
+{
+	printf("HELP\n");
+}
+
+static void printStatement(Statement statement)
+{
+	switch (statement.type)
+	{
+	case CREATE:
+		printCreate(statement.create);
+		break;
+	case SELECT:
+		printSelect(statement.select);
+		break;
+	case NULL_STMT:
+	default:
+		printf("NOT HANDLED YET\n");
+	}
+}
+
+static void freeStatement(Statement statement)
+{
+	switch (statement.type)
+	{
+	case CREATE:
+		freeCreate(statement.create);
+		break;
+	case SELECT:
+		freeSelect(statement.select);
+		break;
+	case NULL_STMT:
+	default:
+		return;
+	}
+}
+
 int run()
 {
 
@@ -57,12 +94,21 @@ int run()
 		read_input(input);
 		if (input->buffer[0] == '.')
 		{
-			// handle meta command
+			if (strcmp(input->buffer, ".exit") == 0)
+			{
+				break;
+			}
+			if (strcmp(input->buffer, ".help") == 0)
+			{
+				print_help();
+			}
 		}
 		else
 		{
 			initScanner(&scanner, input->buffer, input->input_length);
 			initParser(&statement, &scanner);
+			printStatement(statement);
+			freeStatement(statement);
 			freeInput(input);
 		}
 	}

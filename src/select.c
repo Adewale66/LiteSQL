@@ -1,107 +1,43 @@
 #include <strings.h>
 #include "parser.h"
 
-static struct
+// static struct
+// {
+// 	TokenType type;
+// 	BinaryOperator op;
+// } operators[] = {
+// 	{TOKEN_EQUALS, EQUALS},
+// 	{TOKEN_GT, GREATER_THAN},
+// 	{TOKEN_GT_EQUALS, GREATER_THAN_OR_EQUALS},
+// 	{TOKEN_LT, LESS_THAN},
+// 	{TOKEN_LT_EQUALS, LESS_THAN_OR_EQUALS},
+// 	{TOKEN_NOT_EQUALS, NOT_EQUALS}};
+
+// static int opCount = 6;
+
+// static BinaryOperator getOp(TokenType type)
+// {
+// 	for (int i = 0; i < opCount; i++)
+// 	{
+// 		if (operators[i].type == type)
+// 			return operators[i].op;
+// 	}
+// 	return BAD_OP;
+// }
+
+static void *errorSelect(const char *message, SelectStmt *select)
 {
-	TokenType type;
-	BinaryOperator op;
-} operators[] = {
-	{TOKEN_EQUALS, EQUALS},
-	{TOKEN_GT, GREATER_THAN},
-	{TOKEN_GT_EQUALS, GREATER_THAN_OR_EQUALS},
-	{TOKEN_LT, LESS_THAN},
-	{TOKEN_LT_EQUALS, LESS_THAN_OR_EQUALS},
-	{TOKEN_NOT_EQUALS, NOT_EQUALS}};
-
-static int opCount = 6;
-
-static Expression *createExpr(ExpressionType type)
-{
-	Expression *expr = ALLOCATE_MEMORY(Expression, sizeof(Expression));
-	expr->type = type;
-	return expr;
-}
-
-static BinaryOperator getOp(TokenType type)
-{
-	for (int i = 0; i < opCount; i++)
-	{
-		if (operators[i].type == type)
-			return operators[i].op;
-	}
-	return BAD_OP;
-}
-static void parseWhere(SelectStmt *select, Scanner *scanner, Token *token) //(TODO FIX)
-{
-
-	scanToken(scanner, token);
-	Expression *expression = createExpr(BINARY);
-
-	if (token->type == TOKEN_NUMBER)
-	{
-		Expression *left = createExpr(IDENTIFIER);
-		left->expr.identifier.intValue = *((int *)token->literal);
-		expression->expr.binary.left = left;
-	}
-	else if (token->type == TOKEN_IDENTIFIER)
-	{
-		Expression *left = createExpr(IDENTIFIER);
-		strncpy(left->expr.identifier.stringValue, (char *)token->literal, strlen((char *)token->literal));
-		expression->expr.binary.left = left;
-	}
-	else
-	{
-		fprintf(stderr, "Error: Unexpected identifier\n");
-		// handle this
-		return;
-	}
-
-	scanToken(scanner, token);
-	BinaryOperator op = getOp(token->type);
-
-	if (op == BAD_OP)
-	{
-		// handle this
-		return;
-	}
-	expression->expr.binary.operator= op;
-	scanToken(scanner, token);
-
-	if (token->type == TOKEN_NUMBER)
-	{
-		Expression *right = createExpr(IDENTIFIER);
-		right->expr.identifier.intValue = *((int *)token->literal);
-		expression->expr.binary.right = right;
-	}
-	else if (token->type == TOKEN_IDENTIFIER)
-	{
-		Expression *right = createExpr(IDENTIFIER);
-		strncpy(right->expr.identifier.stringValue, (char *)token->literal, strlen((char *)token->literal));
-		expression->expr.binary.right = right;
-	}
-	else
-	{
-		fprintf(stderr, "Error: Unexpected identifier\n");
-		// handle this
-		return;
-	}
-	select->where = expression;
+	fprintf(stderr, "Error: %s.\n", message);
+	freeSelect(select);
+	return NULL;
 }
 
 static SelectStmt *checkClause(SelectStmt *select, Scanner *scanner, Token *token)
 {
 	scanToken(scanner, token);
-
-	if (token->type == TOKEN_WHERE)
-	{
-		parseWhere(select, scanner, token);
-	}
 	if (token->type != TOKEN_SEMICOLON)
 	{
-		// handle this
-		fprintf(stderr, "Error: expected semicolon.\n");
-		free(select);
-		return NULL;
+		return errorSelect("expected semicolon.", select);
 	}
 	return select;
 }
@@ -111,18 +47,12 @@ static SelectStmt *parseTable(SelectStmt *select, Scanner *scanner, Token *token
 
 	if (token->type != TOKEN_FROM)
 	{
-
-		freeSelect(select);
-		fprintf(stderr, "Error: Invalid SQL statement\n");
-		return NULL;
+		return errorSelect("Invalid sql statement.", select);
 	}
 	scanToken(scanner, token);
 	if (token->type != TOKEN_IDENTIFIER)
 	{
-		// handle this
-		fprintf(stderr, "Error: Unexpected identifier\n");
-		free(select);
-		return NULL;
+		return errorSelect("Invalid sql statement.", select);
 	}
 	select->from = COPY_STRING(token->literal);
 
@@ -137,18 +67,16 @@ static SelectStmt *parseColumns(SelectStmt *select, Scanner *scanner, Token *tok
 	while (token->type == TOKEN_IDENTIFIER)
 	{
 		comma = false;
-		Expression column;
+		IdentifierExpression column;
 		if (select->column_capacity < select->column_count + 1)
 		{
-			uint8_t oldCapacity = select->column_capacity;
-			select->column_capacity = GROW_CAPACITY(oldCapacity);
-			select->columns = GROW_ARRAY(Expression, select->columns, select->column_capacity);
+			select->column_capacity = GROW_CAPACITY(select->column_capacity);
+			select->columns = GROW_ARRAY(IdentifierExpression, select->columns, select->column_capacity);
 		}
-		column.type = IDENTIFIER;
-		column.expr.identifier.type = VALUE_STRING;
-		size_t max_len = sizeof(column.expr.identifier.stringValue) - 1;
-		strncpy(column.expr.identifier.stringValue, token->literal, max_len);
-		column.expr.identifier.stringValue[max_len] = '\0';
+		column.type = STRING;
+		size_t max_len = sizeof(column.stringValue) - 1;
+		strncpy(column.stringValue, (char *)token->literal, max_len);
+		column.stringValue[max_len] = '\0';
 
 		select->columns[select->column_count++] = column;
 
@@ -166,10 +94,7 @@ static SelectStmt *parseColumns(SelectStmt *select, Scanner *scanner, Token *tok
 
 	if (select->column_count == 0 || comma)
 	{
-		// handle this
-		fprintf(stderr, "Error: Unexpected identifier\n");
-		free(select);
-		return NULL;
+		return errorSelect("Unpected identifier", select);
 	}
 
 	return parseTable(select, scanner, token);
@@ -200,6 +125,7 @@ void freeSelect(SelectStmt *select)
 	if (select->from != NULL)
 		free(select->from);
 	free(select);
+	select = NULL;
 }
 
 void printSelect(SelectStmt *select)
@@ -208,16 +134,12 @@ void printSelect(SelectStmt *select)
 
 	for (int i = 0; i < select->column_count; i++)
 	{
-		printf("  ");
-		printf("COLUMN: ");
-		if (select->columns[i].type == IDENTIFIER)
-		{
-			if (select->columns[i].expr.identifier.type == VALUE_STRING)
-				printf("%s\n", select->columns[i].expr.identifier.stringValue);
-			else
+		printf("  COLUMN: ");
 
-				printf("%d\n", select->columns[i].expr.identifier.intValue);
-		}
+		if (select->columns[i].type == STRING)
+			printf("%s\n", select->columns[i].stringValue);
+		else
+			printf("%d\n", select->columns[i].intValue);
 	}
 
 	printf("TABLE: %s\n", select->from);

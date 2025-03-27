@@ -137,6 +137,8 @@ void scanToken(Scanner *scanner, Token *token)
 	if (token->type != TOKEN_NUMBER && token->type != TOKEN_NULL)
 	{
 		free(token->literal);
+		token->type = TOKEN_NULL;
+		token->literal = NULL;
 	}
 
 	char c = advance(scanner);
