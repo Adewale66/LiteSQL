@@ -1,4 +1,4 @@
-#include "parser.h"
+#include "../include/parser.h"
 
 void initParser(Statement *stmt, Scanner *scanner)
 {
@@ -23,6 +23,15 @@ void initParser(Statement *stmt, Scanner *scanner)
 		stmt->create = NULL;
 		stmt->create = createStatement(scanner, &token);
 		if (stmt->create == NULL)
+		{
+			stmt->type = NULL_STMT;
+		}
+		break;
+	case TOKEN_DELETE:
+		stmt->type = DELETE;
+		stmt->delete = NULL;
+		stmt->delete = deleteStatement(scanner, &token);
+		if (stmt->delete == NULL)
 		{
 			stmt->type = NULL_STMT;
 		}

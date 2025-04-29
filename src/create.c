@@ -1,20 +1,11 @@
-#include "parser.h"
-
-// CREATE TABLE users ( id int );
-
-static void *errorCreate(const char *message, CreateStmt *create)
-{
-	fprintf(stderr, "Error: %s\n", message);
-	freeCreate(create);
-	return NULL;
-}
+#include "../include/parser.h"
 
 static CreateStmt *getColumns(CreateStmt *create, Scanner *scanner, Token *token)
 {
 	scanToken(scanner, token);
 	if (token->type != TOKEN_LPAREN)
 	{
-		return errorCreate("Expected left parenthesis", create);
+		ERROR_STMT("Expected left parenthesis", create, freeCreate);
 	}
 	scanToken(scanner, token);
 	bool comma = false;
@@ -23,29 +14,31 @@ static CreateStmt *getColumns(CreateStmt *create, Scanner *scanner, Token *token
 	{
 		comma = false;
 
-		ColumnExpression column;
+		Expression column;
+		column.type = LITERAL;
+		column.literal = ALLOCATE_MEMORY(Literal, sizeof(Literal));
+		column.literal->value = NULL;
 
 		if (create->column_capacity < create->column_count + 1)
 		{
 			create->column_capacity = GROW_CAPACITY(create->column_capacity);
-			create->columns = GROW_ARRAY(ColumnExpression, create->columns, create->column_capacity);
+			create->columns = GROW_ARRAY(Expression, create->columns, create->column_capacity);
 		}
-		size_t max_len = sizeof(column.column_name) - 1;
-		strncpy(column.column_name, (char *)token->literal, max_len);
-		column.column_name[max_len] = '\0';
 
 		scanToken(scanner, token);
 		if (token->type == TOKEN_STRING)
 		{
-			column.type = STRING;
+			column.literal->type = STRING;
+			column.literal->value = COPY_STRING((char *)token->literal);
 		}
 		else if (token->type == TOKEN_INT)
 		{
-			column.type = INT;
+			column.literal->type = INT;
+			column.literal->type = token->literal;
 		}
 		else
 		{
-			return errorCreate("Invalid column type.", create);
+			ERROR_STMT("Invalid column type.", create, freeCreate);
 		}
 
 		create->columns[create->column_count++] = column;
@@ -64,19 +57,19 @@ static CreateStmt *getColumns(CreateStmt *create, Scanner *scanner, Token *token
 
 	if (create->column_count == 0 || comma)
 	{
-		return errorCreate("unexpected identifier", create);
+		ERROR_STMT("unexpected identifier", create, freeCreate);
 	}
 
 	if (token->type != TOKEN_RPAREN)
 	{
 
-		return errorCreate("Expected right parenthesis", create);
+		ERROR_STMT("Expected right parenthesis", create, freeCreate);
 	}
 
 	scanToken(scanner, token);
 	if (token->type != TOKEN_SEMICOLON)
 	{
-		return errorCreate("Invalid sql statement", create);
+		ERROR_STMT("Invalid sql statement", create, freeCreate);
 	}
 
 	return create;
@@ -87,13 +80,13 @@ static CreateStmt *getTable(CreateStmt *create, Scanner *scanner, Token *token)
 	scanToken(scanner, token);
 	if (token->type != TOKEN_TABLE)
 	{
-		return errorCreate("Invalid create sql statement", create);
+		ERROR_STMT("Invalid create sql statement", create, freeCreate);
 	}
 
 	scanToken(scanner, token);
 	if (token->type != TOKEN_IDENTIFIER)
 	{
-		return errorCreate("Unexpected identifier", create);
+		ERROR_STMT("Unexpected identifier", create, freeCreate);
 	}
 	create->table_name = COPY_STRING((char *)token->literal);
 	return getColumns(create, scanner, token);
@@ -119,6 +112,12 @@ void freeCreate(CreateStmt *create)
 
 	if (create->column_count > 0)
 	{
+		for (int i = 0; i < create->column_count; i++)
+		{
+			if (create->columns[i].literal->type == STRING)
+				free(create->columns[i].literal->value);
+			free(create->columns[i].literal);
+		}
 		free(create->columns);
 		create->column_count = 0;
 	}
@@ -139,6 +138,6 @@ void printCreate(CreateStmt *create)
 
 	for (int i = 0; i < create->column_count; i++)
 	{
-		printf("  COLUMN: %s\n", create->columns[i].column_name);
+		printf("  COLUMN: %s\n", (char *)create->columns[i].literal->value);
 	}
 }

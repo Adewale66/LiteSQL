@@ -22,5 +22,6 @@ typedef enum
 
 void initVM(uint8_t *pc);
 void resetVM();
+InterpretResult generateBytecCode(Statement *statement);
 
 #endif

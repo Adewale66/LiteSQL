@@ -1,4 +1,4 @@
-#include "btree.h"
+#include "../include/btree.h"
 
 static int binarySearch(int l, int r, int value, BTree *node)
 {
@@ -280,7 +280,7 @@ BTree *delete(BTree *node, BTree *parent, int index, int value)
 	int l = binarySearch(0, node->keyCount, value, node);
 	if (l >= node->keyCount || node->keys[l] != value)
 	{
-		node->children[l] = delete (node->children[l], node, l, value);
+		node->children[l] = delete(node->children[l], node, l, value);
 		// parent check here
 		if (node->keyCount < MIN_KEYS && parent != NULL)
 		{
@@ -451,7 +451,7 @@ BTree *delete(BTree *node, BTree *parent, int index, int value)
 		{
 
 			node->keys[l] = predecessor->keys[predecessor->keyCount - 1];
-			node->children[l] = delete (node->children[l], node, l, node->keys[l]);
+			node->children[l] = delete(node->children[l], node, l, node->keys[l]);
 
 			if (node->keyCount == 0 && parent == NULL) // root
 			{

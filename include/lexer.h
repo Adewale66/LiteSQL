@@ -1,5 +1,5 @@
-#ifndef _Lexer_H
-#define _Lexer_H
+#ifndef __Lexer_H
+#define __Lexer_H
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -23,11 +23,14 @@ typedef enum
 	// Keywords
 	TOKEN_SELECT, // SELECT
 	TOKEN_INSERT, // INSERT
+	TOKEN_CREATE, // CREATE
+	TOKEN_DELETE, // CREATE
+	TOKEN_UPDATE, // CREATE
 	TOKEN_FROM,	  // FROM
 	TOKEN_WHERE,  // WHERE
 	TOKEN_VALUES, // VALUES
 	TOKEN_INTO,	  // INTO
-	TOKEN_CREATE, // CREATE
+	TOKEN_SET,	  // STRING
 	TOKEN_TABLE,  // CREATE
 	TOKEN_INT,	  // INT
 	TOKEN_STRING, // STRING
@@ -39,6 +42,8 @@ typedef enum
 	TOKEN_GT_EQUALS,  // >=
 	TOKEN_LT,		  // <
 	TOKEN_LT_EQUALS,  // <=
+	TOKEN_PLUS,		  // +
+	TOKEN_MINUS,	  // -
 
 	// Literals
 	TOKEN_IDENTIFIER, // Column/Table names

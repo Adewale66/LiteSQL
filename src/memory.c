@@ -1,4 +1,4 @@
-#include "memory.h"
+#include "../include/memory.h"
 
 void *reallocate(void *pointer, size_t newSize)
 {

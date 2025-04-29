@@ -1,4 +1,4 @@
-#include "chunk.h"
+#include "../include/chunk.h"
 
 void initChunk(Chunk *chunk)
 {

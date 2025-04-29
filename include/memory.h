@@ -1,5 +1,5 @@
-#ifndef _MEMORY
-#define _MEMORY
+#ifndef __MEMORY_H
+#define __MEMORY_H
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -19,6 +19,11 @@
 
 #define FREE_ARRAY(pointer) \
 	free(pointer);
+
+#define ERROR_STMT(message, pointer, freeStmt) \
+	fprintf(stderr, "Error: %s\n", message);   \
+	freeStmt(pointer);                         \
+	return NULL;
 
 void *reallocate(void *pointer, size_t newSize);
 void *allocate(int size);

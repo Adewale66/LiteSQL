@@ -1,4 +1,4 @@
-#include "processor.h"
+#include "../include/processor.h"
 
 int main(int argc, char *argv[])
 {

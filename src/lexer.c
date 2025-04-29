@@ -1,4 +1,4 @@
-#include "lexer.h"
+#include "../include/lexer.h"
 
 static struct
 {
@@ -7,16 +7,19 @@ static struct
 } keywords[] = {
 	{"select", TOKEN_SELECT},
 	{"insert", TOKEN_INSERT},
+	{"create", TOKEN_CREATE},
+	{"delete", TOKEN_DELETE},
+	{"update", TOKEN_UPDATE},
 	{"from", TOKEN_FROM},
 	{"where", TOKEN_WHERE},
 	{"values", TOKEN_VALUES},
+	{"set", TOKEN_SET},
 	{"into", TOKEN_INTO},
-	{"create", TOKEN_CREATE},
 	{"table", TOKEN_TABLE},
 	{"string", TOKEN_STRING},
 	{"int", TOKEN_INT},
 };
-static int keywordCount = 10;
+static int keywordCount = 13;
 
 static bool isAtEnd(Scanner *scanner)
 {
@@ -161,6 +164,12 @@ void scanToken(Scanner *scanner, Token *token)
 		break;
 	case '*':
 		addToken(TOKEN_STAR, token, scanner);
+		break;
+	case '+':
+		addToken(TOKEN_PLUS, token, scanner);
+		break;
+	case '-':
+		addToken(TOKEN_MINUS, token, scanner);
 		break;
 	case '(':
 		addToken(TOKEN_LPAREN, token, scanner);

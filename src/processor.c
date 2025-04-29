@@ -1,4 +1,4 @@
-#include "processor.h"
+#include "../include/processor.h"
 
 static InputBuffer *createBuffer()
 {
@@ -49,6 +49,11 @@ static void print_help()
 	printf("HELP\n");
 }
 
+static void print_schema()
+{
+	printf("SCHEMA\n");
+}
+
 static void printStatement(Statement statement)
 {
 	switch (statement.type)
@@ -58,6 +63,9 @@ static void printStatement(Statement statement)
 		break;
 	case SELECT:
 		printSelect(statement.select);
+		break;
+	case DELETE:
+		printDelete(statement.delete);
 		break;
 	case NULL_STMT:
 	default:
@@ -74,6 +82,9 @@ static void freeStatement(Statement statement)
 		break;
 	case SELECT:
 		freeSelect(statement.select);
+		break;
+	case DELETE:
+		freeDelete(statement.delete);
 		break;
 	case NULL_STMT:
 	default:
@@ -101,6 +112,10 @@ int run()
 			if (strcmp(input->buffer, ".help") == 0)
 			{
 				print_help();
+			}
+			if (strcmp(input->buffer, ".schema") == 0)
+			{
+				print_schema();
 			}
 		}
 		else

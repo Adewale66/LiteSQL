@@ -1,23 +1,9 @@
 #include <strings.h>
-#include "parser.h"
-
-// static struct
-// {
-// 	TokenType type;
-// 	BinaryOperator op;
-// } operators[] = {
-// 	{TOKEN_EQUALS, EQUALS},
-// 	{TOKEN_GT, GREATER_THAN},
-// 	{TOKEN_GT_EQUALS, GREATER_THAN_OR_EQUALS},
-// 	{TOKEN_LT, LESS_THAN},
-// 	{TOKEN_LT_EQUALS, LESS_THAN_OR_EQUALS},
-// 	{TOKEN_NOT_EQUALS, NOT_EQUALS}};
-
-// static int opCount = 6;
+#include "../include/parser.h"
 
 // static BinaryOperator getOp(TokenType type)
 // {
-// 	for (int i = 0; i < opCount; i++)
+// 	for (int i = 0; i < OPERATOR_COUNT; i++)
 // 	{
 // 		if (operators[i].type == type)
 // 			return operators[i].op;
@@ -25,19 +11,12 @@
 // 	return BAD_OP;
 // }
 
-static void *errorSelect(const char *message, SelectStmt *select)
-{
-	fprintf(stderr, "Error: %s.\n", message);
-	freeSelect(select);
-	return NULL;
-}
-
 static SelectStmt *checkClause(SelectStmt *select, Scanner *scanner, Token *token)
 {
 	scanToken(scanner, token);
 	if (token->type != TOKEN_SEMICOLON)
 	{
-		return errorSelect("expected semicolon.", select);
+		ERROR_STMT("expected semicolon.", select, freeSelect)
 	}
 	return select;
 }
@@ -47,12 +26,12 @@ static SelectStmt *parseTable(SelectStmt *select, Scanner *scanner, Token *token
 
 	if (token->type != TOKEN_FROM)
 	{
-		return errorSelect("Invalid sql statement.", select);
+		ERROR_STMT("Invalid sql statement.", select, freeSelect);
 	}
 	scanToken(scanner, token);
 	if (token->type != TOKEN_IDENTIFIER)
 	{
-		return errorSelect("Invalid sql statement.", select);
+		ERROR_STMT("Invalid sql statement.", select, freeSelect);
 	}
 	select->from = COPY_STRING(token->literal);
 
@@ -67,17 +46,17 @@ static SelectStmt *parseColumns(SelectStmt *select, Scanner *scanner, Token *tok
 	while (token->type == TOKEN_IDENTIFIER)
 	{
 		comma = false;
-		IdentifierExpression column;
+		Expression column;
+		column.type = LITERAL;
+		column.literal = ALLOCATE_MEMORY(Literal, sizeof(Literal));
+		column.literal->value = NULL;
+
 		if (select->column_capacity < select->column_count + 1)
 		{
 			select->column_capacity = GROW_CAPACITY(select->column_capacity);
-			select->columns = GROW_ARRAY(IdentifierExpression, select->columns, select->column_capacity);
+			select->columns = GROW_ARRAY(Expression, select->columns, select->column_capacity);
 		}
-		column.type = STRING;
-		size_t max_len = sizeof(column.stringValue) - 1;
-		strncpy(column.stringValue, (char *)token->literal, max_len);
-		column.stringValue[max_len] = '\0';
-
+		column.literal->value = COPY_STRING((char *)token->literal);
 		select->columns[select->column_count++] = column;
 
 		scanToken(scanner, token);
@@ -94,7 +73,7 @@ static SelectStmt *parseColumns(SelectStmt *select, Scanner *scanner, Token *tok
 
 	if (select->column_count == 0 || comma)
 	{
-		return errorSelect("Unpected identifier", select);
+		ERROR_STMT("Unpected identifier", select, freeSelect);
 	}
 
 	return parseTable(select, scanner, token);
@@ -118,6 +97,11 @@ void freeSelect(SelectStmt *select)
 
 	if (select->column_count > 0)
 	{
+		for (int i = 0; i < select->column_count; i++)
+		{
+			free(select->columns[i].literal->value);
+			free(select->columns[i].literal);
+		}
 		free(select->columns);
 		select->column_count = 0;
 	}
@@ -135,11 +119,7 @@ void printSelect(SelectStmt *select)
 	for (int i = 0; i < select->column_count; i++)
 	{
 		printf("  COLUMN: ");
-
-		if (select->columns[i].type == STRING)
-			printf("%s\n", select->columns[i].stringValue);
-		else
-			printf("%d\n", select->columns[i].intValue);
+		printf("%s\n", (char *)select->columns[i].literal->value);
 	}
 
 	printf("TABLE: %s\n", select->from);
