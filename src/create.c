@@ -25,16 +25,15 @@ static CreateStmt *getColumns(CreateStmt *create, Scanner *scanner, Token *token
 			create->columns = GROW_ARRAY(Expression, create->columns, create->column_capacity);
 		}
 
+		column.literal->value = COPY_STRING((char *)token->literal);
 		scanToken(scanner, token);
 		if (token->type == TOKEN_STRING)
 		{
 			column.literal->type = STRING;
-			column.literal->value = COPY_STRING((char *)token->literal);
 		}
 		else if (token->type == TOKEN_INT)
 		{
 			column.literal->type = INT;
-			column.literal->type = token->literal;
 		}
 		else
 		{
@@ -114,8 +113,7 @@ void freeCreate(CreateStmt *create)
 	{
 		for (int i = 0; i < create->column_count; i++)
 		{
-			if (create->columns[i].literal->type == STRING)
-				free(create->columns[i].literal->value);
+			free(create->columns[i].literal->value);
 			free(create->columns[i].literal);
 		}
 		free(create->columns);
