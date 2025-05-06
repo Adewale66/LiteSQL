@@ -1,4 +1,4 @@
-#include "../include/btree.h"
+#include "../../include/btree.h"
 
 static int binarySearch(int l, int r, int value, BTree *node)
 {

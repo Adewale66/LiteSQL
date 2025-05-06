@@ -2,21 +2,23 @@
 #define __VM_h
 
 #include <stdint.h>
+
 #include "chunk.h"
 
-#define REGISTER_SIZE 50
+#define REGISTER_SIZE 200
 
 typedef struct
 {
-	uint8_t *pc;
-	uint32_t registerStack[REGISTER_SIZE];
+	uint8_t *bytecode;
+	uint8_t *ip;
+	int next_reg;
+	uint32_t registers[REGISTER_SIZE];
 } VM;
 
 typedef enum
 {
 	INTERPRET_OK,
 	INTERPRET_COMPILE_ERROR,
-	INTERPRET_RUNTIME_ERROR,
 	INTERPRET_UNKOWN_OPCODE
 } InterpretResult;
 

@@ -1,4 +1,4 @@
-#include "../include/lexer.h"
+#include "../../include/lexer.h"
 
 static struct
 {
@@ -19,7 +19,6 @@ static struct
 	{"string", TOKEN_STRING},
 	{"int", TOKEN_INT},
 };
-static int keywordCount = 13;
 
 static bool isAtEnd(Scanner *scanner)
 {
@@ -46,7 +45,8 @@ static bool match(char expected, Scanner *scanner)
 
 static TokenType findKeyword(char *text)
 {
-	for (int i = 0; i < keywordCount; i++)
+	size_t keywordCount = sizeof(keywords) / sizeof(keywords[0]);
+	for (size_t i = 0; i < keywordCount; i++)
 	{
 		if (strcasecmp(keywords[i].keyword, text) == 0)
 			return keywords[i].type;
@@ -228,55 +228,4 @@ void scanToken(Scanner *scanner, Token *token)
 		}
 		break;
 	}
-}
-
-void printToken(Token *token)
-{
-
-	switch (token->type)
-	{
-	case TOKEN_COMMA:
-		printf("COMMA");
-		break;
-	case TOKEN_FROM:
-		printf("FROM");
-		break;
-	case TOKEN_SELECT:
-		printf("SELECT");
-		break;
-	case TOKEN_IDENTIFIER:
-		printf("IDENTIFER: %s", (char *)token->literal);
-		break;
-	case TOKEN_SEMICOLON:
-		printf("SEMICOLON");
-		break;
-	case TOKEN_INSERT:
-		printf("INSERT");
-		break;
-	case TOKEN_STAR:
-		printf("STAR");
-		break;
-	case TOKEN_EOF:
-		printf("EOF");
-		break;
-	case TOKEN_NUMBER:
-		printf("NUMBER: %d", *((int *)token->literal));
-		break;
-	case TOKEN_LPAREN:
-		printf("LEFT_PARENT");
-		break;
-	case TOKEN_RPAREN:
-		printf("RIGHT_PAREN");
-		break;
-	case TOKEN_VALUES:
-		printf("VALUES");
-		break;
-	case TOKEN_INTO:
-		printf("INTO");
-		break;
-	default:
-		printf("Token not recognized %s", (char *)token->literal);
-		break;
-	}
-	printf("\n");
 }

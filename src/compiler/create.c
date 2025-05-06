@@ -1,4 +1,4 @@
-#include "../include/parser.h"
+#include "../../include/parser.h"
 
 static CreateStmt *getColumns(CreateStmt *create, Scanner *scanner, Token *token)
 {
@@ -15,9 +15,9 @@ static CreateStmt *getColumns(CreateStmt *create, Scanner *scanner, Token *token
 		comma = false;
 
 		Expression column;
-		column.type = LITERAL;
-		column.literal = ALLOCATE_MEMORY(Literal, sizeof(Literal));
-		column.literal->value = NULL;
+		column.type = COLUMN;
+		column.column = ALLOCATE_MEMORY(Column, sizeof(Column));
+		column.column->name = NULL;
 
 		if (create->column_capacity < create->column_count + 1)
 		{
@@ -25,15 +25,15 @@ static CreateStmt *getColumns(CreateStmt *create, Scanner *scanner, Token *token
 			create->columns = GROW_ARRAY(Expression, create->columns, create->column_capacity);
 		}
 
-		column.literal->value = COPY_STRING((char *)token->literal);
+		column.column->name = COPY_STRING((char *)token->literal);
 		scanToken(scanner, token);
 		if (token->type == TOKEN_STRING)
 		{
-			column.literal->type = STRING;
+			column.column->type = STRING;
 		}
 		else if (token->type == TOKEN_INT)
 		{
-			column.literal->type = INT;
+			column.column->type = INT;
 		}
 		else
 		{
@@ -42,7 +42,7 @@ static CreateStmt *getColumns(CreateStmt *create, Scanner *scanner, Token *token
 
 		create->columns[create->column_count++] = column;
 
-		scanToken(scanner, token);
+		scanToken(scanner, token); // TODO ADD A PEEK NEXT TOKEN FUNCTION
 		if (token->type == TOKEN_COMMA)
 		{
 			comma = true;
@@ -113,8 +113,8 @@ void freeCreate(CreateStmt *create)
 	{
 		for (int i = 0; i < create->column_count; i++)
 		{
-			free(create->columns[i].literal->value);
-			free(create->columns[i].literal);
+			free(create->columns[i].column->name);
+			free(create->columns[i].column);
 		}
 		free(create->columns);
 		create->column_count = 0;
@@ -122,20 +122,4 @@ void freeCreate(CreateStmt *create)
 
 	free(create);
 	create = NULL;
-}
-
-void printCreate(CreateStmt *create)
-{
-	if (create == NULL)
-	{
-		return;
-	}
-	printf("CREATE\n");
-
-	printf("TABLE: %s\n", create->table_name);
-
-	for (int i = 0; i < create->column_count; i++)
-	{
-		printf("  COLUMN: %s\n", (char *)create->columns[i].literal->value);
-	}
 }

@@ -1,4 +1,4 @@
-#include "../include/parser.h"
+#include "../../include/parser.h"
 
 DeleteStmt *getTable(DeleteStmt *delete, Scanner *scanner, Token *token)
 {
@@ -43,11 +43,4 @@ void freeDelete(DeleteStmt *delete)
 	}
 	free(delete);
 	delete = NULL;
-}
-
-void printDelete(DeleteStmt *delete)
-{
-	printf("DELETE\n");
-
-	printf("TABLE: %s\n", (char *)delete->table_name);
 }

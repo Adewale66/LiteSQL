@@ -1,15 +1,5 @@
 #include <strings.h>
-#include "../include/parser.h"
-
-// static BinaryOperator getOp(TokenType type)
-// {
-// 	for (int i = 0; i < OPERATOR_COUNT; i++)
-// 	{
-// 		if (operators[i].type == type)
-// 			return operators[i].op;
-// 	}
-// 	return BAD_OP;
-// }
+#include "../../include/parser.h"
 
 static SelectStmt *checkClause(SelectStmt *select, Scanner *scanner, Token *token)
 {
@@ -110,17 +100,4 @@ void freeSelect(SelectStmt *select)
 		free(select->from);
 	free(select);
 	select = NULL;
-}
-
-void printSelect(SelectStmt *select)
-{
-	printf("SELECT\n");
-
-	for (int i = 0; i < select->column_count; i++)
-	{
-		printf("  COLUMN: ");
-		printf("%s\n", (char *)select->columns[i].literal->value);
-	}
-
-	printf("TABLE: %s\n", select->from);
 }

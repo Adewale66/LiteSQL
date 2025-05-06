@@ -1,10 +1,12 @@
-#include "../include/vm.h"
+#include "../../include/vm.h"
 
 VM vm;
 
-void init(uint8_t *pc)
+void init(uint8_t *bytecode)
 {
-	vm.pc = pc;
+	vm.bytecode = bytecode;
+	vm.ip = 0;
+	vm.next_reg = 0;
 }
 
 void resetVM()

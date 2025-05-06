@@ -6,13 +6,14 @@ BINDIR  := bin
 TARGET  := $(BINDIR)/db
 VFlags  := --leak-check=full --show-leak-kinds=all
 
-SOURCES := $(wildcard $(SRCDIR)/*.c)
-OBJECTS := $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SOURCES))
+SOURCES := $(shell find $(SRCDIR) -name '*.c')
+OBJECTS := $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SOURCES))
 DEPENDS := $(OBJECTS:.o=.d)
 
 all: $(TARGET)
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
+$(OBJDIR)/%.o: $(SRCDIR)/%.c
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
 
 $(TARGET): $(OBJECTS) | $(BINDIR)

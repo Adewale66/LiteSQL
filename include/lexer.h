@@ -7,6 +7,7 @@
 #include <ctype.h>
 #include <strings.h>
 #include <stdlib.h>
+
 #include "memory.h"
 
 typedef enum
@@ -44,6 +45,7 @@ typedef enum
 	TOKEN_LT_EQUALS,  // <=
 	TOKEN_PLUS,		  // +
 	TOKEN_MINUS,	  // -
+	TOKEN_DIVIDE,	  // /
 
 	// Literals
 	TOKEN_IDENTIFIER, // Column/Table names
@@ -78,5 +80,4 @@ typedef struct
 
 void initScanner(Scanner *scanner, char *source, size_t length);
 void scanToken(Scanner *scanner, Token *token);
-void printToken(Token *token);
 #endif

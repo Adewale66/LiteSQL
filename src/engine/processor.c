@@ -1,4 +1,4 @@
-#include "../include/processor.h"
+#include "../../include/processor.h"
 
 static InputBuffer *createBuffer()
 {
@@ -54,52 +54,39 @@ static void print_schema()
 	printf("SCHEMA\n");
 }
 
-static void printStatement(Statement statement)
+static void print_startup()
 {
-	switch (statement.type)
-	{
-	case CREATE:
-		printCreate(statement.create);
-		break;
-	case SELECT:
-		printSelect(statement.select);
-		break;
-	case DELETE:
-		printDelete(statement.delete);
-		break;
-	case NULL_STMT:
-	default:
-		printf("NOT HANDLED YET\n");
-	}
-}
-
-static void freeStatement(Statement statement)
-{
-	switch (statement.type)
-	{
-	case CREATE:
-		freeCreate(statement.create);
-		break;
-	case SELECT:
-		freeSelect(statement.select);
-		break;
-	case DELETE:
-		freeDelete(statement.delete);
-		break;
-	case NULL_STMT:
-	default:
-		return;
-	}
+	const char *startup_message = "LiteSQL version 1.0\nEnter \".help\" for usage hints\n";
+	write(STDOUT_FILENO, startup_message, strlen(startup_message));
 }
 
 int run()
 {
+	// FILE *file;
+
+	// file = fopen(argv[1], "rb");
+	// if (file == NULL)
+	// {
+	// 	addMasterPage(argv[1]);
+	// }
+
+	// void *page = allocatePage();
+	// size_t bytes_read = fread(page, PAGE_SIZE, 1, file);
+	// if (bytes_read < 1)
+	// {
+	// 	fprintf(stderr, "Could not find page");
+	// 	exit(EXIT_FAILURE);
+	// }
+	// PageHeader *pageHeader = (PageHeader *)((uint8_t *)page + sizeof(DatabaseHeader));
+	// fclose(file);
+	// free(page);
 
 	InputBuffer *input = createBuffer();
 	Scanner scanner;
 	Statement statement;
 
-	printf("LiteSQL version 1.0\nEnter \".help\" for usage hints\n");
+	print_startup();
+
 	while (true)
 	{
 		read_input(input);
@@ -122,7 +109,12 @@ int run()
 		{
 			initScanner(&scanner, input->buffer, input->input_length);
 			initParser(&statement, &scanner);
-			printStatement(statement);
+			VerificationResult result = verifyStatement(&statement);
+			if (result == VERIFICATION_SUCCESS)
+			{
+				// generate bytcode
+			}
+			// printStatement(statement);
 			freeStatement(statement);
 			freeInput(input);
 		}

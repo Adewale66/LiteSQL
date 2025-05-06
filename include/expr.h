@@ -6,6 +6,7 @@ typedef struct Binary Binary;
 typedef struct Grouping Grouping;
 typedef struct Unary Unary;
 typedef struct Literal Literal;
+typedef struct Column Column;
 typedef enum BinaryOperator BinaryOperator;
 typedef enum ColumnType ColumnType;
 
@@ -15,6 +16,7 @@ typedef enum
 	GROUPING,
 	UNARY,
 	LITERAL,
+	COLUMN
 } ExpressionType;
 
 enum ColumnType
@@ -34,7 +36,9 @@ enum BinaryOperator
 	NOT_EQUALS,
 	BAD_OP,
 	PLUS,
-	MINUS
+	MINUS,
+	DIVIDE,
+	MULTIPLY
 };
 
 struct Expression
@@ -46,6 +50,7 @@ struct Expression
 		Grouping *group;
 		Unary *unary;
 		Literal *literal;
+		Column *column;
 	};
 };
 
@@ -70,6 +75,11 @@ struct Unary
 struct Literal
 {
 	void *value;
+};
+
+struct Column
+{
+	char *name;
 	ColumnType type;
 };
 

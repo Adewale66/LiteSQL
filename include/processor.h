@@ -6,7 +6,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
 #include "parser.h"
+#include "debug.h"
+#include "verify.h"
 
 typedef struct InputBuffer InputBuffer;
 
