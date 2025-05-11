@@ -1,5 +1,7 @@
 #include "../../include/processor.h"
 
+void *schema = NULL;
+
 static InputBuffer *createBuffer()
 {
 	InputBuffer *buffer = (InputBuffer *)malloc(sizeof(InputBuffer));
@@ -60,39 +62,23 @@ static void print_startup()
 	write(STDOUT_FILENO, startup_message, strlen(startup_message));
 }
 
-int run()
+int run(const char *filename)
 {
-	// FILE *file;
-
-	// file = fopen(argv[1], "rb");
-	// if (file == NULL)
-	// {
-	// 	addMasterPage(argv[1]);
-	// }
-
-	// void *page = allocatePage();
-	// size_t bytes_read = fread(page, PAGE_SIZE, 1, file);
-	// if (bytes_read < 1)
-	// {
-	// 	fprintf(stderr, "Could not find page");
-	// 	exit(EXIT_FAILURE);
-	// }
-	// PageHeader *pageHeader = (PageHeader *)((uint8_t *)page + sizeof(DatabaseHeader));
-	// fclose(file);
-	// free(page);
+	print_startup();
+	if (filename == NULL)
+	{
+		write(STDOUT_FILENO, "Connected to a temporary database.\nUse \".open FILENAME\" to reopen on a persistent database.\n", 93);
+	}
+	schema = initSchemaPage(filename);
 
 	InputBuffer *input = createBuffer();
-	Scanner scanner;
-	Statement statement;
-
-	print_startup();
 
 	while (true)
 	{
 		read_input(input);
 		if (input->buffer[0] == '.')
 		{
-			if (strcmp(input->buffer, ".exit") == 0)
+			if (strcmp(input->buffer, ".quit") == 0)
 			{
 				break;
 			}
@@ -104,21 +90,33 @@ int run()
 			{
 				print_schema();
 			}
+			if (strstr(input->buffer, ".open"))
+			{
+				const char *db_name = 6 + input->buffer; // slice off ".open " from the input
+				if (schema != NULL)
+				{
+					free(schema);
+					schema = NULL;
+				}
+				schema = initSchemaPage(db_name);
+				write(STDOUT_FILENO, "Database updated.\n", 19);
+			}
 		}
 		else
 		{
-			initScanner(&scanner, input->buffer, input->input_length);
-			initParser(&statement, &scanner);
-			VerificationResult result = verifyStatement(&statement);
-			if (result == VERIFICATION_SUCCESS)
-			{
-				// generate bytcode
-			}
-			// printStatement(statement);
-			freeStatement(statement);
+			Scanner *scanner = initScanner(input->buffer, input->input_length);
+			Statement *statement = prepare_statement(scanner);
+			// VerificationResult result = verifyStatement(&statement, schema);
+			// if (result == VERIFICATION_SUCCESS)
+			// {
+			// 	// generate bytcode
+			// }
+			print_statement(statement);
+			free_statement(statement);
 			freeInput(input);
 		}
 	}
 	freeBuffer(input);
+	free(schema);
 	return 0;
 }

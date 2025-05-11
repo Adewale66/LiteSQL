@@ -6,8 +6,11 @@ static VerificationResult verfiyCreate(CreateStmt *statement)
 	return VERIFICATION_FAILED;
 }
 
-VerificationResult verifyStatement(Statement *statement)
+VerificationResult verifyStatement(Statement *statement, void *schema)
 {
+	if (schema != NULL)
+	{
+	}
 
 	switch (statement->type)
 	{

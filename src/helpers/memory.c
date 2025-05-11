@@ -43,3 +43,13 @@ char *copy(char *string)
 	}
 	return ptr;
 }
+
+void *allocate_page(int size)
+{
+	void *page = calloc(1, size);
+	if (page == NULL)
+	{
+		alloc_failed();
+	}
+	return page;
+}

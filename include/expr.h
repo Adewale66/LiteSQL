@@ -22,7 +22,8 @@ typedef enum
 enum ColumnType
 {
 	INT,
-	STRING
+	STRING,
+	BOOL
 };
 
 enum BinaryOperator

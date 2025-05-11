@@ -1,12 +1,24 @@
 #include "../../include/parser.h"
 
-static CreateStmt *getColumns(CreateStmt *create, Scanner *scanner, Token *token)
+typedef struct
 {
-	scanToken(scanner, token);
-	if (token->type != TOKEN_LPAREN)
+	Expression *expression;
+	int count;
+	int cap;
+} Columns;
+
+static Columns *getColumns(Scanner *scanner, Token *token)
+{
+	bool valid = consume(scanner, token, TOKEN_LPAREN, "Expected left parenthesis");
+	if (!valid)
 	{
-		ERROR_STMT("Expected left parenthesis", create, freeCreate);
+		return NULL;
 	}
+
+	Columns *cols = ALLOCATE_MEMORY(Columns, sizeof(Columns));
+	cols->cap = 0;
+	cols->count = 0;
+
 	scanToken(scanner, token);
 	bool comma = false;
 
@@ -19,10 +31,10 @@ static CreateStmt *getColumns(CreateStmt *create, Scanner *scanner, Token *token
 		column.column = ALLOCATE_MEMORY(Column, sizeof(Column));
 		column.column->name = NULL;
 
-		if (create->column_capacity < create->column_count + 1)
+		if (cols->cap < cols->count + 1)
 		{
-			create->column_capacity = GROW_CAPACITY(create->column_capacity);
-			create->columns = GROW_ARRAY(Expression, create->columns, create->column_capacity);
+			cols->cap = GROW_CAPACITY(cols->cap);
+			cols->expression = GROW_ARRAY(Expression, cols->expression, cols->cap);
 		}
 
 		column.column->name = COPY_STRING((char *)token->literal);
@@ -35,14 +47,20 @@ static CreateStmt *getColumns(CreateStmt *create, Scanner *scanner, Token *token
 		{
 			column.column->type = INT;
 		}
+		else if (token->type == TOKEN_BOOL)
+		{
+			column.column->type = BOOL;
+		}
 		else
 		{
-			ERROR_STMT("Invalid column type.", create, freeCreate);
+			fprintf(stderr, "Invalid column type.");
+			// FREE SOMETHING HERE
+			return NULL;
 		}
 
-		create->columns[create->column_count++] = column;
+		cols->expression[cols->count++] = column;
 
-		scanToken(scanner, token); // TODO ADD A PEEK NEXT TOKEN FUNCTION
+		scanToken(scanner, token);
 		if (token->type == TOKEN_COMMA)
 		{
 			comma = true;
@@ -54,54 +72,71 @@ static CreateStmt *getColumns(CreateStmt *create, Scanner *scanner, Token *token
 		}
 	}
 
-	if (create->column_count == 0 || comma)
+	if (cols->count == 0 || comma)
 	{
-		ERROR_STMT("unexpected identifier", create, freeCreate);
+		// FREE SOMETHING HERE
+		fprintf(stderr, "unexpected identifier");
+		return NULL;
 	}
 
 	if (token->type != TOKEN_RPAREN)
 	{
-
-		ERROR_STMT("Expected right parenthesis", create, freeCreate);
+		// FREE SOMETHING HERE
+		fprintf(stderr, "Expected right parenthesis");
+		return NULL;
 	}
 
-	scanToken(scanner, token);
-	if (token->type != TOKEN_SEMICOLON)
+	valid = consume(scanner, token, TOKEN_SEMICOLON, "Invalid sql statement");
+	if (!valid)
 	{
-		ERROR_STMT("Invalid sql statement", create, freeCreate);
+		// FREE SOMETHING HERE
+		return NULL;
 	}
+
+	return cols;
+}
+
+static char *getTable(Scanner *scanner, Token *token)
+{
+	bool valid = consume(scanner, token, TOKEN_TABLE, "Invalid create sql statement\n");
+	if (!valid)
+	{
+		return NULL;
+	}
+
+	valid = consume(scanner, token, TOKEN_IDENTIFIER, "Unexpected identifier\n");
+	if (!valid)
+	{
+		return NULL;
+	}
+	char *table_name = COPY_STRING((char *)token->literal);
+	return table_name;
+}
+
+CreateStmt *create_statement(Scanner *scanner, Token *token)
+{
+
+	char *table_name = getTable(scanner, token);
+	if (table_name == NULL)
+	{
+		return NULL;
+	}
+	Columns *cols = getColumns(scanner, token);
+	if (cols == NULL)
+	{
+		return NULL;
+	}
+	CreateStmt *create = ALLOCATE_MEMORY(CreateStmt, sizeof(CreateStmt));
+	create->column_count = cols->count;
+	create->columns = cols->expression;
+	create->table_name = table_name;
+
+	free(cols);
 
 	return create;
 }
 
-static CreateStmt *getTable(CreateStmt *create, Scanner *scanner, Token *token)
-{
-	scanToken(scanner, token);
-	if (token->type != TOKEN_TABLE)
-	{
-		ERROR_STMT("Invalid create sql statement", create, freeCreate);
-	}
-
-	scanToken(scanner, token);
-	if (token->type != TOKEN_IDENTIFIER)
-	{
-		ERROR_STMT("Unexpected identifier", create, freeCreate);
-	}
-	create->table_name = COPY_STRING((char *)token->literal);
-	return getColumns(create, scanner, token);
-}
-
-CreateStmt *createStatement(Scanner *scanner, Token *token)
-{
-	CreateStmt *create = ALLOCATE_MEMORY(CreateStmt, sizeof(CreateStmt));
-	create->column_count = 0;
-	create->column_capacity = 0;
-	create->columns = NULL;
-	create->table_name = NULL;
-	return getTable(create, scanner, token);
-}
-
-void freeCreate(CreateStmt *create)
+void free_create(CreateStmt *create)
 {
 
 	if (create->table_name != NULL)

@@ -27,18 +27,18 @@ BinaryOperator getOp(TokenType type)
 	return BAD_OP;
 }
 
-void freeStatement(Statement statement)
+void free_statement(Statement *statement)
 {
-	switch (statement.type)
+	switch (statement->type)
 	{
 	case CREATE:
-		freeCreate(statement.create);
+		free_create(statement->create);
 		break;
 	case SELECT:
-		freeSelect(statement.select);
+		free_select(statement->select);
 		break;
 	case DELETE:
-		freeDelete(statement.delete);
+		free_delete(statement->delete);
 		break;
 	case NULL_STMT:
 	default:
@@ -46,11 +46,13 @@ void freeStatement(Statement statement)
 	}
 }
 
-void initParser(Statement *stmt, Scanner *scanner)
+Statement *prepare_statement(Scanner *scanner)
 {
 	Token token;
 	token.literal = NULL;
 	token.type = TOKEN_NULL;
+
+	Statement *stmt = ALLOCATE_MEMORY(Statement, sizeof(Statement));
 
 	scanToken(scanner, &token);
 	switch (token.type)
@@ -58,7 +60,7 @@ void initParser(Statement *stmt, Scanner *scanner)
 	case TOKEN_SELECT:
 		stmt->type = SELECT;
 		stmt->select = NULL;
-		stmt->select = selectStatement(scanner, &token);
+		stmt->select = select_statement(scanner, &token);
 		if (stmt->select == NULL)
 		{
 			stmt->type = NULL_STMT;
@@ -67,7 +69,7 @@ void initParser(Statement *stmt, Scanner *scanner)
 	case TOKEN_CREATE:
 		stmt->type = CREATE;
 		stmt->create = NULL;
-		stmt->create = createStatement(scanner, &token);
+		stmt->create = create_statement(scanner, &token);
 		if (stmt->create == NULL)
 		{
 			stmt->type = NULL_STMT;
@@ -76,7 +78,7 @@ void initParser(Statement *stmt, Scanner *scanner)
 	case TOKEN_DELETE:
 		stmt->type = DELETE;
 		stmt->delete = NULL;
-		stmt->delete = deleteStatement(scanner, &token);
+		stmt->delete = delete_statement(scanner, &token);
 		if (stmt->delete == NULL)
 		{
 			stmt->type = NULL_STMT;
@@ -90,4 +92,5 @@ void initParser(Statement *stmt, Scanner *scanner)
 	{
 		free(token.literal);
 	}
+	return stmt;
 }

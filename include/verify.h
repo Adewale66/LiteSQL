@@ -9,6 +9,6 @@ typedef enum
 	VERIFICATION_FAILED,
 } VerificationResult;
 
-VerificationResult verifyStatement(Statement *statement);
+VerificationResult verifyStatement(Statement *statement, void *schema);
 
 #endif

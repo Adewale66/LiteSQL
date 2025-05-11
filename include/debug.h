@@ -3,7 +3,7 @@
 
 #include "parser.h"
 
-void printStatement(Statement statement);
-void printToken(Token *token);
+void print_statement(Statement *statement);
+void print_token(Token *token);
 
 #endif

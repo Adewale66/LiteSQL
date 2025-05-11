@@ -6,7 +6,7 @@ static SelectStmt *checkClause(SelectStmt *select, Scanner *scanner, Token *toke
 	scanToken(scanner, token);
 	if (token->type != TOKEN_SEMICOLON)
 	{
-		ERROR_STMT("expected semicolon.", select, freeSelect)
+		ERROR_STMT("expected semicolon.", select, free_select)
 	}
 	return select;
 }
@@ -16,12 +16,12 @@ static SelectStmt *parseTable(SelectStmt *select, Scanner *scanner, Token *token
 
 	if (token->type != TOKEN_FROM)
 	{
-		ERROR_STMT("Invalid sql statement.", select, freeSelect);
+		ERROR_STMT("Invalid sql statement.", select, free_select);
 	}
 	scanToken(scanner, token);
 	if (token->type != TOKEN_IDENTIFIER)
 	{
-		ERROR_STMT("Invalid sql statement.", select, freeSelect);
+		ERROR_STMT("Invalid sql statement.", select, free_select);
 	}
 	select->from = COPY_STRING(token->literal);
 
@@ -63,13 +63,13 @@ static SelectStmt *parseColumns(SelectStmt *select, Scanner *scanner, Token *tok
 
 	if (select->column_count == 0 || comma)
 	{
-		ERROR_STMT("Unpected identifier", select, freeSelect);
+		ERROR_STMT("Unpected identifier", select, free_select);
 	}
 
 	return parseTable(select, scanner, token);
 }
 
-SelectStmt *selectStatement(Scanner *scanner, Token *token)
+SelectStmt *select_statement(Scanner *scanner, Token *token)
 {
 	SelectStmt *select = ALLOCATE_MEMORY(SelectStmt, sizeof(SelectStmt));
 	select->column_capacity = 0;
@@ -79,7 +79,7 @@ SelectStmt *selectStatement(Scanner *scanner, Token *token)
 	return parseColumns(select, scanner, token);
 }
 
-void freeSelect(SelectStmt *select)
+void free_select(SelectStmt *select)
 {
 
 	if (select == NULL)

@@ -50,7 +50,6 @@ struct CreateStmt
 	char *table_name;
 	Expression *columns;
 	uint8_t column_count;
-	uint8_t column_capacity;
 };
 
 struct DeleteStmt
@@ -72,17 +71,17 @@ struct Statement
 	};
 };
 
-void initParser(Statement *statement, Scanner *scanner);
-void freeStatement(Statement statement);
-BinaryOperator getOp(TokenType type);
+Statement *prepare_statement(Scanner *scanner);
+void free_statement(Statement *statement);
+BinaryOperator get_operator(TokenType type);
 
-SelectStmt *selectStatement(Scanner *scanner, Token *token);
-void freeSelect(SelectStmt *select);
+SelectStmt *select_statement(Scanner *scanner, Token *token);
+void free_select(SelectStmt *select);
 
-CreateStmt *createStatement(Scanner *scanner, Token *token);
-void freeCreate(CreateStmt *create);
+CreateStmt *create_statement(Scanner *scanner, Token *token);
+void free_create(CreateStmt *create);
 
-DeleteStmt *deleteStatement(Scanner *scanner, Token *token);
-void freeDelete(DeleteStmt *delete);
+DeleteStmt *delete_statement(Scanner *scanner, Token *token);
+void free_delete(DeleteStmt *delete);
 
 #endif

@@ -55,12 +55,14 @@ static TokenType findKeyword(char *text)
 	return TOKEN_NULL;
 }
 
-void initScanner(Scanner *scanner, char *source, size_t length)
+Scanner *initScanner(char *source, size_t length)
 {
+	Scanner *scanner = ALLOCATE_MEMORY(Scanner, sizeof(Scanner));
 	scanner->source = source;
 	scanner->start = 0;
 	scanner->source_length = length;
 	scanner->current = 0;
+	return scanner;
 }
 
 static void addToken(TokenType type, Token *token, Scanner *scanner)
@@ -133,6 +135,17 @@ static void string(char end, Token *token, Scanner *scanner)
 	token->type = TOKEN_IDENTIFIER;
 	char *text = substring(scanner->source, scanner->start + 1, scanner->current - scanner->start - 2);
 	token->literal = text;
+}
+
+bool consume(Scanner *scanner, Token *token, TokenType expected, const char *error_message)
+{
+	scanToken(scanner, token);
+	if (token->type != expected)
+	{
+		fprintf(stderr, error_message);
+		return false;
+	}
+	return true;
 }
 
 void scanToken(Scanner *scanner, Token *token)

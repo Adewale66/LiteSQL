@@ -1,6 +1,6 @@
 #include "../../include/debug.h"
 
-static void printCreate(CreateStmt *create)
+static void print_create(CreateStmt *create)
 {
 	if (create == NULL)
 	{
@@ -16,7 +16,7 @@ static void printCreate(CreateStmt *create)
 	}
 }
 
-static void printSelect(SelectStmt *select)
+static void print_select(SelectStmt *select)
 {
 	printf("SELECT\n");
 
@@ -29,25 +29,25 @@ static void printSelect(SelectStmt *select)
 	printf("TABLE: %s\n", select->from);
 }
 
-static void printDelete(DeleteStmt *delete)
+static void print_delete(DeleteStmt *delete)
 {
 	printf("DELETE\n");
 
 	printf("TABLE: %s\n", (char *)delete->table_name);
 }
 
-void printStatement(Statement statement)
+void print_statement(Statement *statement)
 {
-	switch (statement.type)
+	switch (statement->type)
 	{
 	case CREATE:
-		printCreate(statement.create);
+		print_create(statement->create);
 		break;
 	case SELECT:
-		printSelect(statement.select);
+		print_select(statement->select);
 		break;
 	case DELETE:
-		printDelete(statement.delete);
+		print_delete(statement->delete);
 		break;
 	case NULL_STMT:
 	default:
@@ -55,7 +55,7 @@ void printStatement(Statement statement)
 	}
 }
 
-void printToken(Token *token)
+void print_token(Token *token)
 {
 
 	switch (token->type)

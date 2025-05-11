@@ -11,6 +11,7 @@
 #include "parser.h"
 #include "debug.h"
 #include "verify.h"
+#include "pager.h"
 
 typedef struct InputBuffer InputBuffer;
 
@@ -21,6 +22,6 @@ struct InputBuffer
 	ssize_t input_length;
 };
 
-int run();
+int run(const char *filename);
 
 #endif

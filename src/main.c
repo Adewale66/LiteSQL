@@ -4,14 +4,7 @@
 
 int main(int argc, char *argv[])
 {
-	if (argc != 2)
-	{
-		fprintf(stderr, "Usage: ./bin/db <filename>\n");
-		fprintf(stderr, "Usage: ./bin/db <filename>%s", argv[1]);
-		exit(EXIT_FAILURE);
-	}
-
-	run();
-
+	const char *filename = (argc == 2) ? argv[1] : NULL;
+	run(filename);
 	return 0;
 }

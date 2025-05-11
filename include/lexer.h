@@ -7,6 +7,7 @@
 #include <ctype.h>
 #include <strings.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "memory.h"
 
@@ -35,6 +36,7 @@ typedef enum
 	TOKEN_TABLE,  // CREATE
 	TOKEN_INT,	  // INT
 	TOKEN_STRING, // STRING
+	TOKEN_BOOL,	  // BOOL
 
 	// Operators
 	TOKEN_EQUALS,	  // =
@@ -78,6 +80,8 @@ typedef struct
 
 } Scanner;
 
-void initScanner(Scanner *scanner, char *source, size_t length);
+Scanner *initScanner(char *source, size_t length);
 void scanToken(Scanner *scanner, Token *token);
+bool consume(Scanner *scanner, Token *token, TokenType expected, const char *error_message);
+
 #endif

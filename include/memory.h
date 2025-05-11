@@ -28,5 +28,6 @@
 void *reallocate(void *pointer, size_t newSize);
 void *allocate(int size);
 char *copy(char *string);
+void *allocate_page(int size);
 
 #endif
