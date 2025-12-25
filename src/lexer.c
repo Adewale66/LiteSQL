@@ -69,6 +69,10 @@ static void addToken(TokenType type, Token *token, Scanner *scanner)
 
 static char advance(Scanner *scanner)
 {
+	if (scanner->current >= scanner->source_length)
+	{
+		return '\0';
+	}
 	return scanner->source[scanner->current++];
 }
 
@@ -130,6 +134,11 @@ static void string(char end, Token *token, Scanner *scanner)
 
 void scanToken(Scanner *scanner, Token *token)
 {
+	if (token->type != TOKEN_NUMBER && token->type != TOKEN_NULL)
+	{
+		free(token->literal);
+	}
+
 	char c = advance(scanner);
 
 	while (c == '\n' || c == '\r' || c == ' ' || c == '\t')
@@ -140,6 +149,8 @@ void scanToken(Scanner *scanner, Token *token)
 
 	switch (c)
 	{
+	case '\0':
+		break;
 	case ';':
 		addToken(TOKEN_SEMICOLON, token, scanner);
 		break;

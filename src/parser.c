@@ -11,13 +11,13 @@ void initParser(Statement *stmt, Scanner *scanner)
 	{
 	case TOKEN_SELECT:
 		stmt->type = SELECT;
-		stmt->select.column_capacity = 0;
-		stmt->select.column_count = 0;
-		stmt->select.columns = NULL;
-		stmt->select.from = NULL;
-		selectStatement(&(stmt->select), scanner, &token);
+		stmt->select = NULL;
+		stmt->select = selectStatement(scanner, &token);
 		break;
-
+	case TOKEN_CREATE:
+		stmt->type = CREATE;
+		stmt->create = NULL;
+		stmt->create = createStatement(scanner, &token);
 	default:
 		break;
 	}

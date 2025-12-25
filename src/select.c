@@ -31,7 +31,7 @@ static BinaryOperator getOp(TokenType type)
 	}
 	return BAD_OP;
 }
-static void parseWhere(SelectStmt *select, Scanner *scanner, Token *token)
+static void parseWhere(SelectStmt *select, Scanner *scanner, Token *token) //(TODO FIX)
 {
 
 	scanToken(scanner, token);
@@ -88,7 +88,7 @@ static void parseWhere(SelectStmt *select, Scanner *scanner, Token *token)
 	select->where = expression;
 }
 
-static void checkClause(SelectStmt *select, Scanner *scanner, Token *token)
+static SelectStmt *checkClause(SelectStmt *select, Scanner *scanner, Token *token)
 {
 	scanToken(scanner, token);
 
@@ -99,31 +99,37 @@ static void checkClause(SelectStmt *select, Scanner *scanner, Token *token)
 	if (token->type != TOKEN_SEMICOLON)
 	{
 		// handle this
-		return;
+		fprintf(stderr, "Error: expected semicolon.\n");
+		free(select);
+		return NULL;
 	}
+	return select;
 }
 
-static void parseTable(SelectStmt *select, Scanner *scanner, Token *token)
+static SelectStmt *parseTable(SelectStmt *select, Scanner *scanner, Token *token)
 {
 
 	if (token->type != TOKEN_FROM)
 	{
 
-		// handle this
-		return;
+		freeSelect(select);
+		fprintf(stderr, "Error: Invalid SQL statement\n");
+		return NULL;
 	}
 	scanToken(scanner, token);
 	if (token->type != TOKEN_IDENTIFIER)
 	{
 		// handle this
-		return;
+		fprintf(stderr, "Error: Unexpected identifier\n");
+		free(select);
+		return NULL;
 	}
 	select->from = COPY_STRING(token->literal);
 
-	checkClause(select, scanner, token);
+	return checkClause(select, scanner, token);
 }
 
-static void parseColumns(SelectStmt *select, Scanner *scanner, Token *token)
+static SelectStmt *parseColumns(SelectStmt *select, Scanner *scanner, Token *token)
 {
 	scanToken(scanner, token);
 	bool comma = false;
@@ -140,7 +146,9 @@ static void parseColumns(SelectStmt *select, Scanner *scanner, Token *token)
 		}
 		column.type = IDENTIFIER;
 		column.expr.identifier.type = VALUE_STRING;
-		strncpy(column.expr.identifier.stringValue, (char *)token->literal, strlen((char *)token->literal));
+		size_t max_len = sizeof(column.expr.identifier.stringValue) - 1;
+		strncpy(column.expr.identifier.stringValue, token->literal, max_len);
+		column.expr.identifier.stringValue[max_len] = '\0';
 
 		select->columns[select->column_count++] = column;
 
@@ -159,37 +167,57 @@ static void parseColumns(SelectStmt *select, Scanner *scanner, Token *token)
 	if (select->column_count == 0 || comma)
 	{
 		// handle this
-		return;
+		fprintf(stderr, "Error: Unexpected identifier\n");
+		free(select);
+		return NULL;
 	}
 
-	parseTable(select, scanner, token);
+	return parseTable(select, scanner, token);
 }
 
-void selectStatement(SelectStmt *select, Scanner *scanner, Token *token)
+SelectStmt *selectStatement(Scanner *scanner, Token *token)
 {
-	parseColumns(select, scanner, token);
+	SelectStmt *select = ALLOCATE_MEMORY(SelectStmt, sizeof(SelectStmt));
+	select->column_capacity = 0;
+	select->column_count = 0;
+	select->columns = NULL;
+	select->from = NULL;
+	return parseColumns(select, scanner, token);
 }
 
 void freeSelect(SelectStmt *select)
 {
 
+	if (select == NULL)
+		return;
+
 	if (select->column_count > 0)
 	{
 		free(select->columns);
+		select->column_count = 0;
 	}
 
 	if (select->from != NULL)
 		free(select->from);
+	free(select);
 }
 
 void printSelect(SelectStmt *select)
 {
 	printf("SELECT\n");
-	printf("  ");
 
 	for (int i = 0; i < select->column_count; i++)
 	{
-		printf("COLUMN: %s\n", select->columns[i].expr.identifier.stringValue);
+		printf("  ");
+		printf("COLUMN: ");
+		if (select->columns[i].type == IDENTIFIER)
+		{
+			if (select->columns[i].expr.identifier.type == VALUE_STRING)
+				printf("%s\n", select->columns[i].expr.identifier.stringValue);
+			else
+
+				printf("%d\n", select->columns[i].expr.identifier.intValue);
+		}
 	}
 
 	printf("TABLE: %s\n", select->from);

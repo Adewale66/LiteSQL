@@ -69,6 +69,7 @@ struct InsertStmt
 
 struct CreateStmt
 {
+	char *table_name;
 };
 
 struct DeleteStmt
@@ -84,11 +85,11 @@ struct Statement
 	StatementType type;
 	union
 	{
-		SelectStmt select;
-		DeleteStmt delete;
-		CreateStmt create;
-		InsertStmt insert;
-		UpdateStmt update;
+		SelectStmt *select;
+		DeleteStmt *delete;
+		CreateStmt *create;
+		InsertStmt *insert;
+		UpdateStmt *update;
 	};
 };
 
@@ -119,9 +120,10 @@ struct Expression
 };
 
 void initParser(Statement *statement, Scanner *scanner);
-void selectStatement(SelectStmt *stmt, Scanner *scanner, Token *token);
 
+SelectStmt *selectStatement(Scanner *scanner, Token *token);
 void freeSelect(SelectStmt *select);
 void printSelect(SelectStmt *select);
 
+CreateStmt *createStatement(Scanner *scanner, Token *token);
 #endif

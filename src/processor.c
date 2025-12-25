@@ -23,6 +23,13 @@ static void freeBuffer(InputBuffer *input)
 	free(input);
 }
 
+static void freeInput(InputBuffer *input)
+{
+	free(input->buffer);
+	input->buffer = NULL;
+	input->buffer_length = 0;
+}
+
 static void read_input(InputBuffer *input)
 {
 	printf("LiteSQL> ");
@@ -56,9 +63,9 @@ int run()
 		{
 			initScanner(&scanner, input->buffer, input->input_length);
 			initParser(&statement, &scanner);
-			printSelect(&(statement.select));
-			freeSelect(&(statement.select));
+			freeInput(input);
 		}
 	}
 	freeBuffer(input);
+	return 0;
 }
